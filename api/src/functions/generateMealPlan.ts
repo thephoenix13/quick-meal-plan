@@ -3,6 +3,16 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 export async function generateMealPlan(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Meal plan generation request received');
 
+    // Only allow POST requests
+    if (request.method !== 'POST') {
+        return {
+            status: 405,
+            jsonBody: {
+                error: 'Method not allowed. Use POST.'
+            }
+        };
+    }
+
     // Get API key from environment variable
     const apiKey = process.env.ANTHROPIC_API_KEY;
     
@@ -18,7 +28,7 @@ export async function generateMealPlan(request: HttpRequest, context: Invocation
 
     try {
         // Parse request body
-        const body = await request.json();
+        const body = await request.json() as any;
         const { profile } = body;
 
         if (!profile) {
@@ -67,7 +77,7 @@ export async function generateMealPlan(request: HttpRequest, context: Invocation
             };
         }
 
-        const data = await anthropicResponse.json();
+        const data = await anthropicResponse.json() as any;
         const textContent = data.content?.find((block: any) => block.type === 'text');
 
         if (!textContent || !textContent.text) {
@@ -238,7 +248,7 @@ function parseMealPlanJSON(rawText: string, profile: any): any {
 }
 
 app.http('generateMealPlan', {
-    methods: ['POST'],
+    methods: ['POST', 'GET'],
     authLevel: 'anonymous',
     route: 'generate-meal-plan',
     handler: generateMealPlan
