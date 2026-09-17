@@ -43,9 +43,16 @@ const PANTRY_STAPLES = [
   'Root vegetables',
   'Millets (jowar, bajra, ragi)',
   'Besan (gram flour)',
-  'Dry fruits & nuts',
   'Jaggery',
   'Coconut',
+  'Fresh fruits (seasonal)',
+  'Dry fruits (almonds, walnuts, raisins)',
+  'Seeds (flax, chia, sesame, pumpkin)',
+  'Sprouts (moong, chana)',
+  'Honey',
+  'Buttermilk/Lassi',
+  'Eggs',
+  'Chicken/Fish',
 ];
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -76,7 +83,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     nonVegDays: [],
     kitchenPreferences: [],
     indianRegion: 'North Indian (Punjab, Delhi, UP)',
-    pantryStaples: ['Atta (whole wheat flour)', 'Rice', 'Dal (lentils)'],
+    pantryStaples: ['Atta (whole wheat flour)', 'Rice', 'Dal (lentils)', 'Fresh fruits (seasonal)', 'Seeds (flax, chia, sesame, pumpkin)'],
     allergies: '',
     foodsToAvoid: '',
     mealsPerDay: 4,

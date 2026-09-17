@@ -1,69 +1,139 @@
 import { PatientProfile, MealPlan } from '../types';
 
-export async function generateMealPlan(apiKey: string, profile: PatientProfile): Promise<MealPlan> {
+export interface StreamCallbacks {
+  onProgress: (message: string) => void;
+  onDayComplete: (day: number, dayPlan: any) => void;
+  onComplete: (mealPlan: MealPlan) => void;
+  onError: (error: string) => void;
+}
+
+export async function generateMealPlanStreaming(
+  apiKey: string,
+  profile: PatientProfile,
+  callbacks: StreamCallbacks
+): Promise<void> {
   const prompt = buildPrompt(profile);
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-5',
-      max_tokens: 16000,
-      system: 'You are a clinical nutritionist and dietitian specializing in Indian cuisine and dietary planning. You create evidence-based, personalized meal plans that respect cultural food preferences, health conditions, and nutritional science. Always respond with valid JSON only.',
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    }),
-  });
+  callbacks.onProgress('Connecting to AI...');
+
+  let response: Response;
+  try {
+    response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 8000,
+        stream: true,
+        system: 'You are a clinical nutritionist and dietitian specializing in Indian cuisine and dietary planning. You create evidence-based, personalized meal plans that respect cultural food preferences, health conditions, and nutritional science. Always respond with valid JSON only. No markdown, no explanation, just JSON.',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      }),
+    });
+  } catch (err: any) {
+    callbacks.onError('Network error. Please check your connection and API key.');
+    return;
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.error?.message || `API request failed with status ${response.status}`);
+    callbacks.onError(error.error?.message || `API request failed with status ${response.status}`);
+    return;
   }
 
-  const data = await response.json();
-  const textContent = data.content.find((block: any) => block.type === 'text');
-  
-  if (!textContent) {
-    throw new Error('No text content in API response');
+  callbacks.onProgress('Generating your personalized meal plan...');
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    callbacks.onError('Failed to read response stream');
+    return;
   }
 
-  const text = textContent.text;
-  
-  // Extract JSON from the response
-  const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/(\{[\s\S]*\})/);
-  
-  if (!jsonMatch) {
-    throw new Error('Could not parse meal plan from API response');
+  const decoder = new TextDecoder();
+  let fullText = '';
+  let lastDayNotified = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const event = JSON.parse(data);
+            if (event.type === 'content_block_delta' && event.delta?.text) {
+              fullText += event.delta.text;
+
+              // Check for day completions to show progress
+              const dayMatches = fullText.match(/"day"\s*:\s*(\d+)/g);
+              if (dayMatches) {
+                const currentDay = dayMatches.length;
+                if (currentDay > lastDayNotified) {
+                  lastDayNotified = currentDay;
+                  callbacks.onProgress(`Day ${currentDay} of 7 generated...`);
+                }
+              }
+            }
+          } catch {
+            // Skip unparseable lines
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    callbacks.onError('Error reading response stream');
+    return;
   }
 
-  const mealPlan: MealPlan = JSON.parse(jsonMatch[1]);
-  mealPlan.patientName = profile.name;
-  mealPlan.generatedDate = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  callbacks.onProgress('Finalizing meal plan...');
 
-  return mealPlan;
+  // Parse the complete JSON
+  try {
+    const jsonMatch = fullText.match(/```json\n?([\s\S]*?)\n?```/) || fullText.match(/(\{[\s\S]*\})/);
+
+    if (!jsonMatch) {
+      callbacks.onError('Could not parse meal plan from AI response. Please try again.');
+      return;
+    }
+
+    const mealPlan: MealPlan = JSON.parse(jsonMatch[1]);
+    mealPlan.patientName = profile.name;
+    mealPlan.generatedDate = new Date().toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    callbacks.onComplete(mealPlan);
+  } catch (err: any) {
+    callbacks.onError('Failed to parse the generated meal plan. Please try again.');
+  }
 }
 
 function buildPrompt(profile: PatientProfile): string {
-  const nonVegLine = profile.foodPreference === 'non-vegetarian' 
-    ? `\n- Non-Veg Days: ${profile.nonVegDays.join(', ')}` 
+  const nonVegLine = profile.foodPreference === 'non-vegetarian'
+    ? `\n- Non-Veg Days: ${profile.nonVegDays.join(', ')}`
     : '';
 
-  const prompt = `You are a clinical nutritionist specializing in Indian diets. Generate a personalized 7-day Indian meal plan for the following patient:
+  const prompt = `Generate a personalized 7-day Indian meal plan for this patient:
 
-PATIENT PROFILE:
+PATIENT:
 - Name: ${profile.name}
 - Age: ${profile.age} years
 - Height: ${profile.height} cm
@@ -84,19 +154,26 @@ PATIENT PROFILE:
 - Water Target: ${profile.waterTarget} glasses per day
 
 REQUIREMENTS:
-1. Calculate appropriate daily calorie target based on BMR, activity level, and goal
-2. All meals must be Indian dishes appropriate for the specified region
+1. Calculate daily calorie target based on BMR, activity level, and goal
+2. All meals must be Indian dishes from the specified region
 3. Respect food preferences, allergies, and foods to avoid
-4. Consider health conditions when planning meals
-5. Consider hormonal phase in meal planning
-6. Use pantry staples mentioned
-7. Each meal must include: mealType, name, description, portionSize, calories, protein(g), carbs(g), fat(g), fibre(g), whyItWorks, ingredients[]
+4. Consider health conditions and hormonal phase
+5. Use pantry staples mentioned
+6. IMPORTANT - Include DIVERSE food categories across the day:
+   - Include at least 1 fruit serving per day (seasonal Indian fruits like papaya, apple, banana, pomegranate, guava, orange, etc.)
+   - Include seeds/nuts as snacks or toppings (flax seeds, chia seeds, sesame, almonds, walnuts, etc.)
+   - Include sprouts or salads where appropriate
+   - Include healthy beverages (buttermilk, lassi, coconut water, herbal teas)
+   - Include dal/legumes for protein
+   - Include whole grains (roti, rice, millets)
+   - Include vegetables (cooked and raw)
+   - Include dairy (curd, milk, paneer) if not vegan
+7. Each meal needs: mealType, name, description, portionSize, calories, protein(g), carbs(g), fat(g), fibre(g), whyItWorks, ingredients[]
 8. Provide a brief summary of the plan approach
 
-Respond ONLY with a valid JSON object in this exact format (no other text):
-\`\`\`json
+Respond with ONLY valid JSON in this format:
 {
-  "summary": "Brief description of the plan approach",
+  "summary": "Brief plan description",
   "dailyCalorieTarget": 1800,
   "dailyPlan": [
     {
@@ -112,16 +189,15 @@ Respond ONLY with a valid JSON object in this exact format (no other text):
           "carbs": 20,
           "fat": 6,
           "fibre": 3,
-          "whyItWorks": "Why this is beneficial for this patient",
-          "ingredients": ["ingredient 1", "ingredient 2"]
+          "whyItWorks": "Why this benefits this patient",
+          "ingredients": ["item 1", "item 2"]
         }
       ]
     }
   ]
 }
-\`\`\`
 
-Generate all 7 days with ${profile.mealsPerDay} meals each. Ensure variety across days while maintaining nutritional balance.`;
+Generate all 7 days with ${profile.mealsPerDay} meals each. Ensure variety across days.`;
 
   return prompt;
 }

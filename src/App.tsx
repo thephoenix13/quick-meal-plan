@@ -1,32 +1,41 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import PatientForm from './components/PatientForm';
 import MealPlanDisplay from './components/MealPlanDisplay';
-import { generateMealPlan } from './utils/api';
+import { generateMealPlanStreaming } from './utils/api';
 import { generatePDF } from './utils/pdf';
 import { PatientProfile, MealPlan } from './types';
 
 function App() {
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
   const [lastProfile, setLastProfile] = useState<PatientProfile | null>(null);
   const [lastApiKey, setLastApiKey] = useState('');
 
-  const handleSubmit = async (profile: PatientProfile, apiKey: string) => {
+  const handleSubmit = useCallback(async (profile: PatientProfile, apiKey: string) => {
     setLoading(true);
     setError(null);
+    setProgress('');
+    setMealPlan(null);
     setLastProfile(profile);
     setLastApiKey(apiKey);
 
-    try {
-      const plan = await generateMealPlan(apiKey, profile);
-      setMealPlan(plan);
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate meal plan. Please check your API key and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    await generateMealPlanStreaming(apiKey, profile, {
+      onProgress: (message) => setProgress(message),
+      onDayComplete: () => {},
+      onComplete: (plan) => {
+        setMealPlan(plan);
+        setLoading(false);
+        setProgress('');
+      },
+      onError: (errMsg) => {
+        setError(errMsg);
+        setLoading(false);
+        setProgress('');
+      },
+    });
+  }, []);
 
   const handleRegenerate = () => {
     if (lastProfile && lastApiKey) {
@@ -87,8 +96,10 @@ function App() {
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Generating Meal Plan...</h3>
-            <p className="text-gray-500 text-sm">Analyzing patient profile and creating personalized meals</p>
-            <p className="text-gray-400 text-xs mt-2">This may take 15-30 seconds</p>
+            {progress && (
+              <p className="text-blue-600 text-sm font-medium animate-pulse">{progress}</p>
+            )}
+            <p className="text-gray-400 text-xs mt-3">This usually takes 5-10 seconds</p>
           </div>
         )}
 
