@@ -67,6 +67,7 @@ const HEALTH_CONDITIONS = [
 ];
 
 export default function PatientForm({ onSubmit, loading }: Props) {
+  const [apiKey, setApiKey] = useState('');
   const [profile, setProfile] = useState<PatientProfile>({
     name: '',
     age: 30,
@@ -105,15 +106,40 @@ export default function PatientForm({ onSubmit, loading }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!apiKey.trim()) {
+      alert('Please enter your API key');
+      return;
+    }
     if (!profile.name.trim()) {
       alert('Please enter patient name');
       return;
     }
-    onSubmit(profile, '');
+    onSubmit(profile, apiKey);
   };
 
   return (
     <form onSubmit={handleSubmit} className="max-w-4xl mx-auto p-6 space-y-8">
+      {/* API Key */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <label className="block text-sm font-semibold text-blue-800 mb-2">
+          🔑 API Key
+        </label>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="sk-ant-..."
+          className="w-full px-3 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+        <p className="text-xs text-blue-600 mt-1">
+          Your key is used only for this session and not stored anywhere. Get one at{' '}
+          <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="underline">
+            console.anthropic.com
+          </a>
+        </p>
+      </div>
+
       {/* Basic Info */}
       <section>
         <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">📋 Patient Information</h3>
