@@ -23,7 +23,6 @@ function App() {
 
     await generateMealPlanStreaming(apiKey, profile, {
       onProgress: (message) => setProgress(message),
-      onDayComplete: () => {},
       onComplete: (plan) => {
         setMealPlan(plan);
         setLoading(false);
