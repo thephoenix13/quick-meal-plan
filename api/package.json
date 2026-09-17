@@ -2,18 +2,16 @@
   "name": "meal-plan-api",
   "version": "1.0.0",
   "description": "Azure Functions API for Meal Plan Generator",
+  "main": "dist/functions/*.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w",
-    "prestart": "npm run build",
-    "start": "func start"
+    "watch": "tsc -w"
   },
   "dependencies": {
     "@azure/functions": "^4.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
-  },
-  "main": "dist/src/functions/*.js"
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
 }
