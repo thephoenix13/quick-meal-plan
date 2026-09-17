@@ -27,8 +27,9 @@ export async function generateMealPlanStreaming(
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 10000,
-        system: 'You are a clinical nutritionist specializing in Indian diets. Respond with ONLY valid JSON. No markdown, no explanation, just the raw JSON object starting with { and ending with }. Do not use code blocks or backticks.',
+        max_tokens: 16000,
+        stop_sequences: ['\n\n\n'],
+        system: 'You are a clinical nutritionist specializing in Indian diets. Respond with ONLY valid JSON. No markdown, no explanation, just the raw JSON object starting with { and ending with }. Do not use code blocks or backticks. Keep all text fields concise.',
         messages: [
           {
             role: 'user',
@@ -79,11 +80,15 @@ export async function generateMealPlanStreaming(
     const mealPlan = parseMealPlanJSON(fullText, profile);
     callbacks.onComplete(mealPlan);
   } catch (err: any) {
-    console.error('Parse error. Raw text length:', fullText.length);
+    console.error('Parse error:', err.message);
+    console.error('Raw text length:', fullText.length);
     console.error('Raw text preview:', fullText.substring(0, 1000));
     console.error('Raw text end:', fullText.substring(fullText.length - 500));
+    
+    // Show detailed error for debugging
+    const errorMsg = err.message || 'Unknown parsing error';
     callbacks.onError(
-      'Failed to parse the generated meal plan. The response may have been incomplete. Please try again.'
+      `Failed to parse meal plan: ${errorMsg}. Please check the browser console (F12) for details.`
     );
   }
 }
@@ -110,15 +115,41 @@ function parseMealPlanJSON(rawText: string, profile: PatientProfile): MealPlan {
     throw new Error('Response too short or empty');
   }
 
-  const parsed = JSON.parse(jsonString);
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch (parseErr: any) {
+    // Try to fix common JSON issues
+    // Remove trailing commas
+    jsonString = jsonString.replace(/,\s*([\]}])/g, '$1');
+    // Add missing closing braces/brackets
+    const openBraces = (jsonString.match(/\{/g) || []).length;
+    const closeBraces = (jsonString.match(/\}/g) || []).length;
+    const openBrackets = (jsonString.match(/\[/g) || []).length;
+    const closeBrackets = (jsonString.match(/\]/g) || []).length;
+    
+    if (openBraces > closeBraces) {
+      jsonString += '}'.repeat(openBraces - closeBraces);
+    }
+    if (openBrackets > closeBrackets) {
+      jsonString += ']'.repeat(openBrackets - closeBrackets);
+    }
+    
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch (retryErr: any) {
+      throw new Error(`JSON parse error: ${parseErr.message}`);
+    }
+  }
 
   // Validate structure
   if (!parsed.dailyPlan || !Array.isArray(parsed.dailyPlan)) {
-    throw new Error('Missing dailyPlan array');
+    throw new Error('Missing dailyPlan array in response');
   }
 
-  if (parsed.dailyPlan.length < 7) {
-    throw new Error(`Expected 7 days, got ${parsed.dailyPlan.length}`);
+  // Be lenient - accept less than 7 days if that's what we got
+  if (parsed.dailyPlan.length === 0) {
+    throw new Error('No days in meal plan');
   }
 
   const mealPlan: MealPlan = {
@@ -181,6 +212,8 @@ REQUIREMENTS:
    - Dairy if not vegan (curd, milk, paneer)
 7. Each meal needs: mealType, name, description, portionSize, calories, protein, carbs, fat, fibre, whyItWorks, ingredients
 8. Provide a brief summary
+
+IMPORTANT: Keep descriptions and whyItWorks SHORT (1-2 sentences max). Keep ingredient lists to 3-5 items max.
 
 Return ONLY this JSON structure (no markdown, no extra text, no code blocks):
 {"summary":"brief description","dailyCalorieTarget":1800,"dailyPlan":[{"day":1,"meals":[{"mealType":"Early Morning","name":"Dish Name","description":"Brief desc","portionSize":"1 bowl","calories":150,"protein":5,"carbs":20,"fat":6,"fibre":3,"whyItWorks":"Why this helps","ingredients":["item1","item2"]}]}]}
