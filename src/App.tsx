@@ -43,8 +43,8 @@ function App() {
   };
 
   const handleDownloadPDF = () => {
-    if (mealPlan) {
-      generatePDF(mealPlan);
+    if (mealPlan && lastProfile) {
+      generatePDF(mealPlan, lastProfile);
     }
   };
 
@@ -117,9 +117,10 @@ function App() {
           </div>
         )}
 
-        {mealPlan && !loading && (
+        {mealPlan && !loading && lastProfile && (
           <MealPlanDisplay
             mealPlan={mealPlan}
+            profile={lastProfile}
             onDownloadPDF={handleDownloadPDF}
             onRegenerate={handleRegenerate}
           />

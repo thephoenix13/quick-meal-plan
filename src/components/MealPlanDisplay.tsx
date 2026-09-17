@@ -1,12 +1,15 @@
 import { MealPlan as MealPlanType } from '../types';
 
+import { PatientProfile } from '../types';
+
 interface Props {
   mealPlan: MealPlanType;
+  profile: PatientProfile;
   onDownloadPDF: () => void;
   onRegenerate: () => void;
 }
 
-export default function MealPlanDisplay({ mealPlan, onDownloadPDF, onRegenerate }: Props) {
+export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRegenerate }: Props) {
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
@@ -123,14 +126,38 @@ export default function MealPlanDisplay({ mealPlan, onDownloadPDF, onRegenerate 
         ))}
       </div>
 
-      {/* Disclaimer */}
-      <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 font-medium">⚠️ Disclaimer</p>
-        <p className="text-xs text-yellow-700 mt-1">
-          This meal plan is generated as a suggestion based on the provided health profile and is NOT medical advice.
-          Please consult with a qualified doctor or registered dietitian before making any changes to your diet,
-          especially if you have existing health conditions. Individual nutritional needs may vary.
-        </p>
+      {/* Patient Profile Summary */}
+      <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">📋 Your Input Data</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-600"><span className="font-semibold">Patient Name:</span> {profile.name}</p>
+            <p className="text-gray-600"><span className="font-semibold">Age:</span> {profile.age} years</p>
+            <p className="text-gray-600"><span className="font-semibold">Height:</span> {profile.height} cm</p>
+            <p className="text-gray-600"><span className="font-semibold">Current Weight:</span> {profile.currentWeight} kg</p>
+            <p className="text-gray-600"><span className="font-semibold">Goal Weight:</span> {profile.goalWeight} kg</p>
+          </div>
+          <div>
+            <p className="text-gray-600"><span className="font-semibold">Primary Goal:</span> {profile.primaryGoal}</p>
+            <p className="text-gray-600"><span className="font-semibold">Hormonal Phase:</span> {profile.hormonalPhase}</p>
+            <p className="text-gray-600"><span className="font-semibold">Activity Level:</span> {profile.activityLevel}</p>
+            <p className="text-gray-600"><span className="font-semibold">Goal Timeline:</span> {profile.goalTimeline}</p>
+            <p className="text-gray-600"><span className="font-semibold">Water Target:</span> {profile.waterTarget} glasses/day</p>
+          </div>
+          <div className="md:col-span-2">
+            <p className="text-gray-600"><span className="font-semibold">Health Conditions:</span> {profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Food Preference:</span> {profile.foodPreference}</p>
+            {profile.foodPreference === 'non-vegetarian' && profile.nonVegDays.length > 0 && (
+              <p className="text-gray-600"><span className="font-semibold">Non-Veg Days:</span> {profile.nonVegDays.join(', ')}</p>
+            )}
+            <p className="text-gray-600"><span className="font-semibold">Kitchen Preferences:</span> {profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Indian Region:</span> {profile.indianRegion}</p>
+            <p className="text-gray-600"><span className="font-semibold">Pantry Staples:</span> {profile.pantryStaples.join(', ')}</p>
+            <p className="text-gray-600"><span className="font-semibold">Allergies:</span> {profile.allergies || 'None'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Foods to Avoid:</span> {profile.foodsToAvoid || 'None'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Meals Per Day:</span> {profile.mealsPerDay}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
