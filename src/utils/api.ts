@@ -28,7 +28,6 @@ export async function generateMealPlanStreaming(
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 16000,
-        stop_sequences: ['\n\n\n'],
         system: 'You are a clinical nutritionist specializing in Indian diets. Respond with ONLY valid JSON. No markdown, no explanation, just the raw JSON object starting with { and ending with }. Do not use code blocks or backticks. Keep all text fields concise.',
         messages: [
           {
