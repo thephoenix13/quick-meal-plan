@@ -1,8 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { MealPlan } from '../types';
+import { MealPlan, PatientProfile } from '../types';
 
-export function generatePDF(mealPlan: MealPlan) {
+export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 20;
@@ -123,23 +123,57 @@ export function generatePDF(mealPlan: MealPlan) {
     yPos += 6;
   });
 
-  // Disclaimer
-  if (yPos > 240) {
+  // Patient Profile Summary
+  if (yPos > 200) {
     doc.addPage();
     yPos = 20;
   }
 
   yPos += 10;
-  doc.setFontSize(9);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Disclaimer:', 14, yPos);
-  yPos += 5;
+  doc.text('Your Input Data', 14, yPos);
+  yPos += 8;
+
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  const disclaimer =
-    'This meal plan is generated as a suggestion based on the provided health profile and is NOT medical advice. Please consult with a qualified doctor or registered dietitian before making any changes to your diet, especially if you have existing health conditions. Individual nutritional needs may vary. This plan should be reviewed and approved by a healthcare professional before implementation.';
-  const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 28);
-  doc.text(disclaimerLines, 14, yPos);
+
+  const profileData = [
+    ['Patient Name:', profile.name],
+    ['Age:', `${profile.age} years`],
+    ['Height:', `${profile.height} cm`],
+    ['Current Weight:', `${profile.currentWeight} kg`],
+    ['Goal Weight:', `${profile.goalWeight} kg`],
+    ['Primary Goal:', profile.primaryGoal],
+    ['Hormonal Phase:', profile.hormonalPhase],
+    ['Activity Level:', profile.activityLevel],
+    ['Goal Timeline:', profile.goalTimeline],
+    ['Water Target:', `${profile.waterTarget} glasses/day`],
+    ['Health Conditions:', profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'],
+    ['Food Preference:', profile.foodPreference],
+    ...(profile.foodPreference === 'non-vegetarian' && profile.nonVegDays.length > 0
+      ? [['Non-Veg Days:', profile.nonVegDays.join(', ')]]
+      : []),
+    ['Kitchen Preferences:', profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'],
+    ['Indian Region:', profile.indianRegion],
+    ['Pantry Staples:', profile.pantryStaples.join(', ')],
+    ['Allergies:', profile.allergies || 'None'],
+    ['Foods to Avoid:', profile.foodsToAvoid || 'None'],
+    ['Meals Per Day:', profile.mealsPerDay.toString()],
+  ];
+
+  profileData.forEach(([label, value]) => {
+    if (yPos > 270) {
+      doc.addPage();
+      yPos = 20;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, 14, yPos);
+    doc.setFont('helvetica', 'normal');
+    const valueLines = doc.splitTextToSize(value, pageWidth - 80);
+    doc.text(valueLines, 60, yPos);
+    yPos += Math.max(valueLines.length * 4, 5);
+  });
 
   // Save
   doc.save(`MealPlan_${mealPlan.patientName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
