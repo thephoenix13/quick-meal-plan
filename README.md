@@ -58,7 +58,7 @@ The built files will be in the `dist/` directory.
 
 ### Deploy to Azure Static Web Apps
 
-This app is optimized for Azure Static Web Apps deployment with GitHub Actions CI/CD. It includes a secure backend API (Azure Functions) that holds your Anthropic API key, so users don't need to enter their own key.
+This app is optimized for Azure Static Web Apps deployment with GitHub Actions CI/CD.
 
 #### Step-by-Step Guide
 
@@ -90,7 +90,7 @@ This app is optimized for Azure Static Web Apps deployment with GitHub Actions C
    - **Branch**: main
    - **Build Presets**: Select "React" (or leave as custom)
    - **App location**: `/`
-   - **Api location**: `api` ← IMPORTANT: Set this to "api"
+   - **Api location**: (leave empty)
    - **Output location**: `dist`
 
 4. **Review and Create**
@@ -98,22 +98,17 @@ This app is optimized for Azure Static Web Apps deployment with GitHub Actions C
    - Click "Create"
    - Azure will automatically:
      - Create a GitHub Actions workflow
-     - Build your frontend and API
-     - Deploy everything to a `.azurestaticapps.net` URL
+     - Build your app
+     - Deploy it to a `.azurestaticapps.net` URL
 
-5. **Configure Your Anthropic API Key** (IMPORTANT)
-   - Go to your Static Web App in Azure Portal
-   - Click **"Environment variables"** in the left menu (under Settings)
-   - Click **"+ Add"**
-   - Name: `ANTHROPIC_API_KEY`
-   - Value: Your Anthropic API key (starts with `sk-ant-`)
-   - Click **"Save"**
-   - ⚠️ The API key is stored securely in Azure and never exposed to users
-
-6. **Get Your Deployment URL**
+5. **Get Your Deployment URL**
    - Once deployment completes, you'll get a URL like:
      `https://<random-name>.azurestaticapps.net`
-   - Your app is now live! Users can generate meal plans without entering any API key.
+   - Your app is now live!
+
+6. **Configure API Key** (Optional)
+   - Users will need to enter their own Anthropic API key in the app
+   - Or you can set up Azure Key Vault for centralized key management
 
 #### Using the Included GitHub Actions Workflow
 
@@ -151,17 +146,16 @@ vercel
 
 ## Security Notes
 
-- **API Key Handling**: Your Anthropic API key is stored securely as an Azure environment variable and used by the backend Azure Function. It is never exposed to end users.
-- **Backend Proxy**: All AI requests go through your Azure Function, which holds the API key server-side.
-- **No Data Storage**: All patient data is session-only and never stored or transmitted to any database.
-- **Rate Limits**: Monitor your Anthropic API usage in the [Anthropic Console](https://console.anthropic.com) to avoid unexpected charges.
+- **API Key Handling**: Users enter their Anthropic API key directly in the browser. This is suitable for personal use but not recommended for production with multiple users.
+- **CORS**: The app uses `anthropic-dangerous-direct-browser-access` header to enable browser-based API calls.
+- **No Data Storage**: All patient data is session-only and never stored or transmitted to any backend.
 
 ## Usage
 
-1. Fill in the patient's health profile (19 input fields)
-2. Click "Generate 7-Day Meal Plan"
-3. Wait ~5-10 seconds for the AI to generate the plan
-4. Review the generated plan with detailed nutrition info
+1. Enter your Anthropic API key (get one from [console.anthropic.com](https://console.anthropic.com))
+2. Fill in the patient's health profile
+3. Click "Generate 7-Day Meal Plan"
+4. Review the generated plan
 5. Download as PDF or regenerate if needed
 
 ## Input Fields
