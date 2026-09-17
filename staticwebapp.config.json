@@ -9,6 +9,11 @@
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       }
+    },
+    {
+      "route": "/api/*",
+      "methods": ["POST"],
+      "allowedRoles": ["anonymous"]
     }
   ],
   "responseOverrides": {
@@ -20,5 +25,8 @@
   "mimeTypes": {
     ".json": "application/json",
     ".woff2": "font/woff2"
+  },
+  "platform": {
+    "apiRuntime": "node:20"
   }
 }

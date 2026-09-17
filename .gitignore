@@ -1,9 +1,11 @@
 # Dependencies
 node_modules/
+api/node_modules/
 
 # Build output
 dist/
 build/
+api/dist/
 
 # Environment variables
 .env
