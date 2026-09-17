@@ -12,8 +12,9 @@ export async function generateMealPlan(apiKey: string, profile: PatientProfile):
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      model: 'claude-sonnet-5',
+      max_tokens: 16000,
+      system: 'You are a clinical nutritionist and dietitian specializing in Indian cuisine and dietary planning. You create evidence-based, personalized meal plans that respect cultural food preferences, health conditions, and nutritional science. Always respond with valid JSON only.',
       messages: [
         {
           role: 'user',
