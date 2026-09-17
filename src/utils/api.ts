@@ -27,9 +27,8 @@ export async function generateMealPlanStreaming(
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 8000,
-        stream: true,
-        system: 'You are a clinical nutritionist specializing in Indian diets. Respond with ONLY valid JSON. No markdown fences, no explanation text, just the raw JSON object.',
+        max_tokens: 10000,
+        system: 'You are a clinical nutritionist specializing in Indian diets. Respond with ONLY valid JSON. No markdown, no explanation, just the raw JSON object starting with { and ending with }. Do not use code blocks or backticks.',
         messages: [
           {
             role: 'user',
@@ -55,67 +54,21 @@ export async function generateMealPlanStreaming(
 
   callbacks.onProgress('Generating your personalized meal plan...');
 
-  const reader = response.body?.getReader();
-  if (!reader) {
-    callbacks.onError('Failed to read response stream');
-    return;
-  }
-
-  const decoder = new TextDecoder();
-  let fullText = '';
-  let lastDayNotified = 0;
-  let buffer = '';
-
+  let fullText: string;
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Process complete lines
-      const lines = buffer.split('\n');
-      // Keep the last incomplete line in the buffer
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-
-        // SSE format: lines starting with "data: "
-        if (trimmed.startsWith('data: ')) {
-          const data = trimmed.slice(6);
-
-          if (data === '[DONE]') continue;
-
-          try {
-            const event = JSON.parse(data);
-
-            if (event.type === 'content_block_delta' && event.delta?.text) {
-              fullText += event.delta.text;
-
-              // Track progress by counting completed days
-              const dayMatches = fullText.match(/"day"\s*:\s*\d+/g);
-              if (dayMatches) {
-                const currentDay = dayMatches.length;
-                if (currentDay > lastDayNotified && currentDay <= 7) {
-                  lastDayNotified = currentDay;
-                  callbacks.onProgress(`Day ${currentDay} of 7 generated...`);
-                }
-              }
-            }
-
-            if (event.type === 'error') {
-              callbacks.onError(event.error?.message || 'Stream error from API');
-              return;
-            }
-          } catch {
-            // Skip malformed JSON lines
-          }
-        }
-      }
+    const data = await response.json();
+    
+    // Extract text from response
+    const textContent = data.content?.find((block: any) => block.type === 'text');
+    
+    if (!textContent || !textContent.text) {
+      callbacks.onError('No text content in API response');
+      return;
     }
+    
+    fullText = textContent.text;
   } catch (err: any) {
-    callbacks.onError('Error reading response stream. Please try again.');
+    callbacks.onError('Failed to parse API response');
     return;
   }
 
@@ -126,7 +79,9 @@ export async function generateMealPlanStreaming(
     const mealPlan = parseMealPlanJSON(fullText, profile);
     callbacks.onComplete(mealPlan);
   } catch (err: any) {
-    console.error('Parse error. Raw text preview:', fullText.substring(0, 500));
+    console.error('Parse error. Raw text length:', fullText.length);
+    console.error('Raw text preview:', fullText.substring(0, 1000));
+    console.error('Raw text end:', fullText.substring(fullText.length - 500));
     callbacks.onError(
       'Failed to parse the generated meal plan. The AI response may have been incomplete. Please try again.'
     );
@@ -148,6 +103,11 @@ function parseMealPlanJSON(rawText: string, profile: PatientProfile): MealPlan {
     if (objMatch) {
       jsonString = objMatch[1];
     }
+  }
+
+  // Validate we have something to parse
+  if (!jsonString || jsonString.length < 50) {
+    throw new Error('Response too short or empty');
   }
 
   const parsed = JSON.parse(jsonString);
@@ -222,7 +182,7 @@ REQUIREMENTS:
 7. Each meal needs: mealType, name, description, portionSize, calories, protein, carbs, fat, fibre, whyItWorks, ingredients
 8. Provide a brief summary
 
-Return ONLY this JSON structure (no markdown, no extra text):
+Return ONLY this JSON structure (no markdown, no extra text, no code blocks):
 {"summary":"brief description","dailyCalorieTarget":1800,"dailyPlan":[{"day":1,"meals":[{"mealType":"Early Morning","name":"Dish Name","description":"Brief desc","portionSize":"1 bowl","calories":150,"protein":5,"carbs":20,"fat":6,"fibre":3,"whyItWorks":"Why this helps","ingredients":["item1","item2"]}]}]}
 
 Generate all 7 days with ${profile.mealsPerDay} meals each. Ensure variety across days.`;
