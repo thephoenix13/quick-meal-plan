@@ -174,6 +174,8 @@ function buildPrompt(profile: PatientProfile): string {
 
   return `Generate a personalized 7-day Indian meal plan for this patient.
 
+IMPORTANT: Allergies and "Foods to Avoid" are STRICT constraints. These items must NEVER appear in any meal. Kitchen preferences (vegan, gluten-free, etc.) must also be strictly followed.
+
 PATIENT PROFILE:
 - Name: ${profile.name}
 - Age: ${profile.age} years
@@ -197,10 +199,21 @@ PATIENT PROFILE:
 REQUIREMENTS:
 1. Calculate daily calorie target based on BMR, activity, and goal
 2. All meals must be Indian dishes from the specified region
-3. Respect food preferences, allergies, and foods to avoid
-4. Consider health conditions and hormonal phase
-5. Use pantry staples mentioned
-6. Include DIVERSE food categories each day:
+3. CRITICAL CONSTRAINTS (MUST FOLLOW):
+   - NEVER include any allergens mentioned in "Allergies"
+   - NEVER include any items from "Foods to Avoid"
+   - Strictly follow "Kitchen Preferences" (if vegan: no dairy/eggs, if gluten-free: no wheat, etc.)
+   - Follow "Food Preference" exactly (vegetarian/non-vegetarian/eggetarian)
+   - Only include non-veg on specified "Non-Veg Days"
+4. Health conditions MUST influence food choices:
+   - Hypothyroid: include iodine-rich foods, selenium
+   - Type 2 Diabetes: low glycemic index, controlled carbs
+   - Hypertension: low sodium, high potassium
+   - Iron deficiency: iron-rich foods with vitamin C
+   - Vitamin D deficiency: fortified foods, fatty fish if non-veg
+5. Consider hormonal phase in meal planning (PCOS: anti-inflammatory, perimenopause: calcium-rich, etc.)
+6. Prioritize pantry staples mentioned - use them in most meals
+7. Include DIVERSE food categories each day:
    - At least 1 fruit serving (papaya, apple, banana, pomegranate, guava, orange, etc.)
    - Seeds/nuts as snacks or toppings (flax, chia, sesame, almonds, walnuts)
    - Sprouts or salads where appropriate
@@ -209,8 +222,12 @@ REQUIREMENTS:
    - Whole grains (roti, rice, millets)
    - Vegetables (cooked and raw)
    - Dairy if not vegan (curd, milk, paneer)
-7. Each meal needs: mealType, name, description, portionSize, calories, protein, carbs, fat, fibre, whyItWorks, ingredients
-8. Provide a brief summary
+8. Each meal needs: mealType, name, description, portionSize, calories, protein, carbs, fat, fibre, whyItWorks, ingredients
+9. Provide a brief summary (2-3 sentences) that explicitly mentions:
+   - How the plan addresses the primary goal
+   - Key accommodations for health conditions
+   - Confirmation that allergies and foods to avoid are excluded
+   - Daily water target: ${profile.waterTarget} glasses
 
 IMPORTANT: Keep descriptions and whyItWorks SHORT (1-2 sentences max). Keep ingredient lists to 3-5 items max.
 
