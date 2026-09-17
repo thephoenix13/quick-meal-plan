@@ -107,7 +107,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!apiKey.trim()) {
-      alert('Please enter your Anthropic API key');
+      alert('Please enter your API key');
       return;
     }
     if (!profile.name.trim()) {
@@ -122,7 +122,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       {/* API Key */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <label className="block text-sm font-semibold text-blue-800 mb-2">
-          🔑 Anthropic API Key
+          🔑 API Key
         </label>
         <input
           type="password"

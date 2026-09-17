@@ -13,7 +13,7 @@ export async function generateMealPlanStreaming(
 ): Promise<void> {
   const prompt = buildPrompt(profile);
 
-  callbacks.onProgress('Connecting to AI...');
+  callbacks.onProgress('Initializing meal plan generator...');
 
   let response: Response;
   try {
@@ -83,7 +83,7 @@ export async function generateMealPlanStreaming(
     console.error('Raw text preview:', fullText.substring(0, 1000));
     console.error('Raw text end:', fullText.substring(fullText.length - 500));
     callbacks.onError(
-      'Failed to parse the generated meal plan. The AI response may have been incomplete. Please try again.'
+      'Failed to parse the generated meal plan. The response may have been incomplete. Please try again.'
     );
   }
 }

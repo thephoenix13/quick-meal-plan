@@ -59,7 +59,7 @@ function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Doctor's Meal Plan Generator</h1>
-              <p className="text-xs text-gray-500">AI-Powered Personalized Indian Diet Plans</p>
+              <p className="text-xs text-gray-500">Personalized Indian Diet Plans</p>
             </div>
           </div>
           {mealPlan && (
@@ -84,7 +84,7 @@ function App() {
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
                 Enter your patient's health profile to generate a customized meal plan tailored to their goals,
-                dietary preferences, health conditions, and regional cuisine. Powered by Claude AI.
+                dietary preferences, health conditions, and regional cuisine.
               </p>
             </div>
             <PatientForm onSubmit={handleSubmit} loading={loading} />
