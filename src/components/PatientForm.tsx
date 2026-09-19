@@ -275,11 +275,37 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               const targetBMI = calculateBMI(profile.goalWeight, profile.height);
               const isUnderweight = targetBMI < 18;
               const validation = validateWeightLoss();
+              
+              // Calculate protein target
+              const ibw = 22 * Math.pow(profile.height / 100, 2);
+              const excessWeight = Math.max(0, profile.currentWeight - ibw);
+              const adjustedBW = ibw + (0.25 * excessWeight);
+              
+              let proteinFactor = 1.0;
+              switch (profile.activityLevel) {
+                case 'sedentary': proteinFactor = 0.8; break;
+                case 'lightly active': proteinFactor = 1.0; break;
+                case 'moderately active': proteinFactor = 1.2; break;
+                case 'active': proteinFactor = 1.4; break;
+                case 'very active': proteinFactor = 1.6; break;
+              }
+              
+              if (profile.primaryGoal === 'weight loss') {
+                proteinFactor += 0.2;
+              } else if (profile.primaryGoal === 'more energy' || profile.primaryGoal === 'overall wellness') {
+                proteinFactor += 0.1;
+              }
+              
+              const proteinTarget = Math.round(adjustedBW * proteinFactor);
+              
               return (
                 <>
                   <p className={`text-xs mt-1 ${isUnderweight ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
                     Target BMI: <span className="font-semibold">{targetBMI.toFixed(1)}</span>
                     {isUnderweight && ' ⚠️ Below healthy minimum (18)'}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Estimated Daily Protein: <span className="font-semibold">{proteinTarget}g</span>
                   </p>
                   {!validation.valid && (
                     <p className="text-xs text-red-600 mt-1">⚠️ {validation.message}</p>
@@ -408,9 +434,9 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               }}
               className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="vegetarian">Vegetarian</option>
-              <option value="non-vegetarian">Non-Vegetarian</option>
-              <option value="eggetarian">Eggetarian</option>
+              <option value="vegetarian">Vegetarian (No eggs, no meat, no fish)</option>
+              <option value="non-vegetarian">Non-Vegetarian (Eggs, meat, fish allowed)</option>
+              <option value="eggetarian">Eggetarian (Only eggs - NO meat, NO fish)</option>
             </select>
           </div>
           {profile.foodPreference === 'non-vegetarian' && (
