@@ -305,5 +305,5 @@ IMPORTANT: Keep descriptions and whyItWorks SHORT (1-2 sentences max). Keep ingr
 Return ONLY this JSON structure (no markdown, no extra text, no code blocks):
 {"summary":"brief description","dailyCalorieTarget":1800,"dailyPlan":[{"day":1,"meals":[{"mealType":"Early Morning","name":"Dish Name","description":"Brief desc","portionSize":"1 bowl","calories":150,"protein":5,"carbs":20,"fat":6,"fibre":3,"whyItWorks":"Why this helps","ingredients":["item1","item2"]}]}]}
 
-Generate all 7 days with ${profile.mealsPerDay} meals each. Ensure variety across days.`;
+CRITICAL: Generate exactly 7 days. Each day MUST have exactly ${profile.mealsPerDay} meals. No more, no less. Ensure variety across days.`;
 }

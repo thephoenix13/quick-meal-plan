@@ -100,8 +100,8 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       if (arr.includes(item)) {
         return { ...prev, [field]: arr.filter((i) => i !== item) };
       }
-      // If trying to add Jain and food preference is non-veg or eggetarian, prevent it
-      if (item === 'Jain' && (prev.foodPreference === 'non-vegetarian' || prev.foodPreference === 'eggetarian')) {
+      // If trying to add Jain or Vegan and food preference is non-veg or eggetarian, prevent it
+      if ((item === 'Jain' || item === 'Vegan') && (prev.foodPreference === 'non-vegetarian' || prev.foodPreference === 'eggetarian')) {
         return prev;
       }
       return { ...prev, [field]: [...arr, item] };
@@ -153,8 +153,9 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     return { valid: true, message: '' };
   };
 
-  // Check if Jain should be disabled
+  // Check if Jain and Vegan should be disabled
   const isJainDisabled = profile.foodPreference === 'non-vegetarian' || profile.foodPreference === 'eggetarian';
+  const isVeganDisabled = profile.foodPreference === 'non-vegetarian' || profile.foodPreference === 'eggetarian';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,6 +316,20 @@ export default function PatientForm({ onSubmit, loading }: Props) {
             })()}
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Goal Timeline</label>
+            <select
+              value={profile.goalTimeline}
+              onChange={(e) => updateField('goalTimeline', e.target.value)}
+              className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="3 months">3 Months</option>
+              <option value="6 months">6 Months</option>
+              <option value="9 months">9 Months</option>
+              <option value="12+ months">12+ Months</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Timeframe to reach goal weight</p>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Water Target (glasses/day)</label>
             <input
               type="number"
@@ -376,19 +391,6 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               <option value="very active">Very Active</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Goal Timeline</label>
-            <select
-              value={profile.goalTimeline}
-              onChange={(e) => updateField('goalTimeline', e.target.value)}
-              className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="3 months">3 Months</option>
-              <option value="6 months">6 Months</option>
-              <option value="9 months">9 Months</option>
-              <option value="12+ months">12+ Months</option>
-            </select>
-          </div>
         </div>
       </section>
 
@@ -427,9 +429,12 @@ export default function PatientForm({ onSubmit, loading }: Props) {
                 if (newValue !== 'non-vegetarian') {
                   updateField('nonVegDays', []);
                 }
-                // Remove Jain if switching to non-veg or eggetarian
-                if ((newValue === 'non-vegetarian' || newValue === 'eggetarian') && profile.kitchenPreferences.includes('Jain')) {
-                  updateField('kitchenPreferences', profile.kitchenPreferences.filter(p => p !== 'Jain'));
+                // Remove Jain and Vegan if switching to non-veg or eggetarian
+                if (newValue === 'non-vegetarian' || newValue === 'eggetarian') {
+                  const filtered = profile.kitchenPreferences.filter(p => p !== 'Jain' && p !== 'Vegan');
+                  if (filtered.length !== profile.kitchenPreferences.length) {
+                    updateField('kitchenPreferences', filtered);
+                  }
                 }
               }}
               className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -468,7 +473,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
         <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">👨‍🍳 Kitchen Preferences</h3>
         <div className="flex flex-wrap gap-2">
           {['Vegan', 'Gluten-Free', 'Jain', 'Dairy-Free', 'Nut-Free'].map((pref) => {
-            const isDisabled = pref === 'Jain' && isJainDisabled;
+            const isDisabled = (pref === 'Jain' && isJainDisabled) || (pref === 'Vegan' && isVeganDisabled);
             return (
               <button
                 key={pref}
@@ -482,7 +487,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
                     ? 'bg-purple-100 border-purple-400 text-purple-800'
                     : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
                 }`}
-                title={isDisabled ? 'Jain diet is not compatible with non-vegetarian or eggetarian food preferences' : ''}
+                title={isDisabled ? `${pref} diet is not compatible with non-vegetarian or eggetarian food preferences` : ''}
               >
                 {pref}
                 {isDisabled && ' (Disabled)'}
@@ -490,9 +495,9 @@ export default function PatientForm({ onSubmit, loading }: Props) {
             );
           })}
         </div>
-        {isJainDisabled && (
+        {(isJainDisabled || isVeganDisabled) && (
           <p className="text-xs text-gray-500 mt-2">
-            Note: Jain diet is not compatible with non-vegetarian or eggetarian food preferences
+            Note: Vegan and Jain diets are not compatible with non-vegetarian or eggetarian food preferences
           </p>
         )}
       </section>
