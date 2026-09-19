@@ -100,9 +100,61 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       if (arr.includes(item)) {
         return { ...prev, [field]: arr.filter((i) => i !== item) };
       }
+      // If trying to add Jain and food preference is non-veg or eggetarian, prevent it
+      if (item === 'Jain' && (prev.foodPreference === 'non-vegetarian' || prev.foodPreference === 'eggetarian')) {
+        return prev;
+      }
       return { ...prev, [field]: [...arr, item] };
     });
   };
+
+  // Calculate BMI
+  const calculateBMI = (weight: number, heightCm: number): number => {
+    const heightM = heightCm / 100;
+    return weight / (heightM * heightM);
+  };
+
+  // Get timeline in months
+  const getTimelineMonths = (timeline: string): number => {
+    switch (timeline) {
+      case '3 months': return 3;
+      case '6 months': return 6;
+      case '9 months': return 9;
+      case '12+ months': return 12;
+      default: return 6;
+    }
+  };
+
+  // Validate weight loss feasibility
+  const validateWeightLoss = (): { valid: boolean; message: string } => {
+    const weightToLose = profile.currentWeight - profile.goalWeight;
+    const months = getTimelineMonths(profile.goalTimeline);
+    
+    // Check if target weight is below 30% of current weight
+    if (profile.goalWeight < profile.currentWeight * 0.7) {
+      return { 
+        valid: false, 
+        message: 'Target weight cannot be less than 70% of current weight. Please adjust your goal.' 
+      };
+    }
+
+    // Check if weight loss is feasible for the timeline
+    // Safe weight loss is 0.5-1 kg per week (2-4 kg per month)
+    const maxSafeLossPerMonth = 4; // kg per month
+    const requiredLossPerMonth = weightToLose / months;
+    
+    if (requiredLossPerMonth > maxSafeLossPerMonth) {
+      return {
+        valid: false,
+        message: `Losing ${weightToLose.toFixed(1)}kg in ${months} months requires ${requiredLossPerMonth.toFixed(1)}kg/month, which exceeds the safe limit of 4kg/month. Consider extending your timeline.`
+      };
+    }
+
+    return { valid: true, message: '' };
+  };
+
+  // Check if Jain should be disabled
+  const isJainDisabled = profile.foodPreference === 'non-vegetarian' || profile.foodPreference === 'eggetarian';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +166,21 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       alert('Please enter patient name');
       return;
     }
+
+    // Validate BMI
+    const targetBMI = calculateBMI(profile.goalWeight, profile.height);
+    if (targetBMI < 18) {
+      alert(`Target BMI would be ${targetBMI.toFixed(1)}, which is below the healthy minimum of 18. Please increase your goal weight.`);
+      return;
+    }
+
+    // Validate weight loss feasibility
+    const weightValidation = validateWeightLoss();
+    if (!weightValidation.valid) {
+      alert(weightValidation.message);
+      return;
+    }
+
     onSubmit(profile, apiKey);
   };
 
@@ -155,15 +222,16 @@ export default function PatientForm({ onSubmit, loading }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Age (years)</label>
             <input
               type="number"
               value={profile.age}
               onChange={(e) => updateField('age', Number(e.target.value))}
               className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min={10}
+              min={13}
               max={100}
             />
+            <p className="text-xs text-gray-500 mt-1">Range: 13-100 years</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
@@ -172,9 +240,10 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               value={profile.height}
               onChange={(e) => updateField('height', Number(e.target.value))}
               className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min={100}
-              max={250}
+              min={120}
+              max={230}
             />
+            <p className="text-xs text-gray-500 mt-1">Range: 120-230 cm</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Current Weight (kg)</label>
@@ -183,9 +252,13 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               value={profile.currentWeight}
               onChange={(e) => updateField('currentWeight', Number(e.target.value))}
               className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min={30}
+              min={35}
               max={250}
             />
+            <p className="text-xs text-gray-500 mt-1">Range: 35-250 kg</p>
+            <p className="text-xs text-gray-600 mt-1">
+              Current BMI: <span className="font-semibold">{calculateBMI(profile.currentWeight, profile.height).toFixed(1)}</span>
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Goal Weight (kg)</label>
@@ -194,9 +267,26 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               value={profile.goalWeight}
               onChange={(e) => updateField('goalWeight', Number(e.target.value))}
               className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min={30}
+              min={35}
               max={250}
             />
+            <p className="text-xs text-gray-500 mt-1">Range: 35-250 kg</p>
+            {(() => {
+              const targetBMI = calculateBMI(profile.goalWeight, profile.height);
+              const isUnderweight = targetBMI < 18;
+              const validation = validateWeightLoss();
+              return (
+                <>
+                  <p className={`text-xs mt-1 ${isUnderweight ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
+                    Target BMI: <span className="font-semibold">{targetBMI.toFixed(1)}</span>
+                    {isUnderweight && ' ⚠️ Below healthy minimum (18)'}
+                  </p>
+                  {!validation.valid && (
+                    <p className="text-xs text-red-600 mt-1">⚠️ {validation.message}</p>
+                  )}
+                </>
+              );
+            })()}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Water Target (glasses/day)</label>
@@ -306,9 +396,14 @@ export default function PatientForm({ onSubmit, loading }: Props) {
             <select
               value={profile.foodPreference}
               onChange={(e) => {
-                updateField('foodPreference', e.target.value);
-                if (e.target.value !== 'non-vegetarian') {
+                const newValue = e.target.value;
+                updateField('foodPreference', newValue);
+                if (newValue !== 'non-vegetarian') {
                   updateField('nonVegDays', []);
+                }
+                // Remove Jain if switching to non-veg or eggetarian
+                if ((newValue === 'non-vegetarian' || newValue === 'eggetarian') && profile.kitchenPreferences.includes('Jain')) {
+                  updateField('kitchenPreferences', profile.kitchenPreferences.filter(p => p !== 'Jain'));
                 }
               }}
               className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -346,21 +441,34 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       <section>
         <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">👨‍🍳 Kitchen Preferences</h3>
         <div className="flex flex-wrap gap-2">
-          {['Vegan', 'Gluten-Free', 'Jain', 'Dairy-Free', 'Nut-Free'].map((pref) => (
-            <button
-              key={pref}
-              type="button"
-              onClick={() => toggleArrayItem('kitchenPreferences', pref)}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                profile.kitchenPreferences.includes(pref)
-                  ? 'bg-purple-100 border-purple-400 text-purple-800'
-                  : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {pref}
-            </button>
-          ))}
+          {['Vegan', 'Gluten-Free', 'Jain', 'Dairy-Free', 'Nut-Free'].map((pref) => {
+            const isDisabled = pref === 'Jain' && isJainDisabled;
+            return (
+              <button
+                key={pref}
+                type="button"
+                onClick={() => !isDisabled && toggleArrayItem('kitchenPreferences', pref)}
+                disabled={isDisabled}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  isDisabled
+                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                    : profile.kitchenPreferences.includes(pref)
+                    ? 'bg-purple-100 border-purple-400 text-purple-800'
+                    : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+                }`}
+                title={isDisabled ? 'Jain diet is not compatible with non-vegetarian or eggetarian food preferences' : ''}
+              >
+                {pref}
+                {isDisabled && ' (Disabled)'}
+              </button>
+            );
+          })}
         </div>
+        {isJainDisabled && (
+          <p className="text-xs text-gray-500 mt-2">
+            Note: Jain diet is not compatible with non-vegetarian or eggetarian food preferences
+          </p>
+        )}
       </section>
 
       {/* Region & Pantry */}
@@ -440,9 +548,11 @@ export default function PatientForm({ onSubmit, loading }: Props) {
             onChange={(e) => updateField('mealsPerDay', Number(e.target.value))}
             className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xs"
           >
+            <option value={2}>2 Meals</option>
             <option value={3}>3 Meals</option>
             <option value={4}>4 Meals</option>
             <option value={5}>5 Meals</option>
+            <option value={6}>6 Meals</option>
           </select>
         </div>
       </section>
