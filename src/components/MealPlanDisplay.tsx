@@ -19,6 +19,8 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
           <span>👤 {mealPlan.patientName}</span>
           <span>📅 {mealPlan.generatedDate}</span>
           <span>🔥 {mealPlan.dailyCalorieTarget} kcal/day</span>
+          <span>⚖️ {profile.currentWeight}kg → {profile.goalWeight}kg in {profile.goalTimeline}</span>
+          <span>🍽️ {profile.mealsPerDay} meals/day</span>
         </div>
         {mealPlan.summary && (
           <p className="mt-3 text-sm bg-white/10 rounded-lg p-3">{mealPlan.summary}</p>

@@ -80,47 +80,7 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
       margin: { left: 14, right: 14 },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 6;
-
-    // Meal details
-    dayPlan.meals.forEach((meal) => {
-      if (yPos > 260) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`${meal.mealType}: ${meal.name}`, 14, yPos);
-      yPos += 4;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-
-      if (meal.description) {
-        const descLines = doc.splitTextToSize(meal.description, pageWidth - 28);
-        doc.text(descLines, 14, yPos);
-        yPos += descLines.length * 4;
-      }
-
-      if (meal.whyItWorks) {
-        doc.setFont('helvetica', 'italic');
-        const whyLines = doc.splitTextToSize(`Why: ${meal.whyItWorks}`, pageWidth - 28);
-        doc.text(whyLines, 14, yPos);
-        yPos += whyLines.length * 4;
-      }
-
-      if (meal.ingredients && meal.ingredients.length > 0) {
-        doc.setFont('helvetica', 'normal');
-        const ingLines = doc.splitTextToSize(`Ingredients: ${meal.ingredients.join(', ')}`, pageWidth - 28);
-        doc.text(ingLines, 14, yPos);
-        yPos += ingLines.length * 4;
-      }
-
-      yPos += 3;
-    });
-
-    yPos += 6;
+    yPos = (doc as any).lastAutoTable.finalY + 10;
   });
 
   // Patient Profile Summary
