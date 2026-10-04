@@ -149,8 +149,24 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
           <div className="md:col-span-2">
             <p className="text-gray-600"><span className="font-semibold">Health Conditions:</span> {profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Food Preference:</span> {profile.foodPreference}</p>
-            {profile.foodPreference === 'non-vegetarian' && profile.nonVegDays.length > 0 && (
-              <p className="text-gray-600"><span className="font-semibold">Non-Veg Days:</span> {profile.nonVegDays.join(', ')}</p>
+            {profile.foodPreference === 'non-vegetarian' && (
+              <>
+                {profile.nonVegCategories.length > 0 && (
+                  <p className="text-gray-600"><span className="font-semibold">Non-Veg Categories:</span> {profile.nonVegCategories.join(', ')}</p>
+                )}
+                {profile.meatTypes.length > 0 && (
+                  <p className="text-gray-600"><span className="font-semibold">Meat Types:</span> {profile.meatTypes.join(', ')}</p>
+                )}
+                {profile.eggTypes.length > 0 && (
+                  <p className="text-gray-600"><span className="font-semibold">Egg Types:</span> {profile.eggTypes.join(', ')}</p>
+                )}
+                {profile.fishTypes.length > 0 && (
+                  <p className="text-gray-600"><span className="font-semibold">Fish Types:</span> {profile.fishTypes.join(', ')}</p>
+                )}
+                {profile.nonVegDays.length > 0 && (
+                  <p className="text-gray-600"><span className="font-semibold">Non-Veg Days:</span> {profile.nonVegDays.join(', ')}</p>
+                )}
+              </>
             )}
             <p className="text-gray-600"><span className="font-semibold">Kitchen Preferences:</span> {profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Indian Region:</span> {profile.indianRegion}</p>

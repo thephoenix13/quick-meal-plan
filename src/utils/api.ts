@@ -210,10 +210,24 @@ function calculateProteinTarget(profile: PatientProfile): number {
 }
 
 function buildPrompt(profile: PatientProfile): string {
-  const nonVegLine =
-    profile.foodPreference === 'non-vegetarian'
-      ? `\n- Non-Veg Days: ${profile.nonVegDays.join(', ')}`
-      : '';
+  let nonVegDetails = '';
+  
+  if (profile.foodPreference === 'non-vegetarian') {
+    nonVegDetails = `
+- Non-Vegetarian Categories: ${profile.nonVegCategories.join(', ')}
+${profile.meatTypes.length > 0 ? `- Meat Types: ${profile.meatTypes.join(', ')}` : ''}
+${profile.eggTypes.length > 0 ? `- Egg Types: ${profile.eggTypes.join(', ')}` : ''}
+${profile.fishTypes.length > 0 ? `- Fish Types: ${profile.fishTypes.join(', ')}` : ''}
+- Non-Veg Days: ${profile.nonVegDays.join(', ')}
+
+CRITICAL NON-VEG CONSTRAINTS:
+- ONLY include selected meat types: ${profile.meatTypes.join(', ') || 'None selected'}
+- ONLY include selected egg types: ${profile.eggTypes.join(', ') || 'None selected'}
+- ONLY include selected fish types: ${profile.fishTypes.join(', ') || 'None selected'}
+- NEVER include unselected meat/fish/egg types
+- Only include non-veg items on: ${profile.nonVegDays.join(', ')}
+- On non-veg days, you can include any combination of the selected types`;
+  }
 
   // Clarify eggetarian restriction
   const eggetarianClarification = 
@@ -242,7 +256,7 @@ PATIENT PROFILE:
 - Activity Level: ${profile.activityLevel}
 - Goal Timeline: ${profile.goalTimeline}
 - Health Conditions: ${profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'}
-- Food Preference: ${profile.foodPreference}${nonVegLine}${eggetarianClarification}
+- Food Preference: ${profile.foodPreference}${nonVegDetails}${eggetarianClarification}
 - Kitchen Preferences: ${profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'}
 - Indian Region: ${profile.indianRegion}
 - Pantry Staples: ${profile.pantryStaples.join(', ')}

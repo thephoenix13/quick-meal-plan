@@ -10,6 +10,10 @@ export interface PatientProfile {
   goalTimeline: string;
   healthConditions: string[];
   foodPreference: string;
+  nonVegCategories: string[];
+  meatTypes: string[];
+  eggTypes: string[];
+  fishTypes: string[];
   nonVegDays: string[];
   kitchenPreferences: string[];
   indianRegion: string;
