@@ -148,6 +148,7 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
           </div>
           <div className="md:col-span-2">
             <p className="text-gray-600"><span className="font-semibold">Health Conditions:</span> {profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Diet Richness:</span> {profile.dietRichness.length > 0 ? profile.dietRichness.join(', ') : 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Food Preference:</span> {profile.foodPreference}</p>
             {profile.foodPreference === 'non-vegetarian' && (
               <>

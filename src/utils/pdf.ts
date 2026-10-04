@@ -110,6 +110,7 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
     ['Goal Timeline:', profile.goalTimeline],
     ['Water Target:', `${profile.waterTarget} glasses/day`],
     ['Health Conditions:', profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'],
+    ['Diet Richness:', profile.dietRichness.length > 0 ? profile.dietRichness.join(', ') : 'None'],
     ['Food Preference:', profile.foodPreference],
     ...(profile.foodPreference === 'non-vegetarian' ? [
       ...(profile.nonVegCategories.length > 0 ? [['Non-Veg Categories:', profile.nonVegCategories.join(', ')]] : []),

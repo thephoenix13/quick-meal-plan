@@ -15,6 +15,7 @@ export interface PatientProfile {
   eggTypes: string[];
   fishTypes: string[];
   nonVegDays: string[];
+  dietRichness: string[];
   kitchenPreferences: string[];
   indianRegion: string;
   pantryStaples: string[];

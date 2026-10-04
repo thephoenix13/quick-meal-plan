@@ -86,6 +86,14 @@ const HEALTH_CONDITIONS = [
   'Vitamin D Deficiency',
 ];
 
+const DIET_RICHNESS_OPTIONS = [
+  'Vitamin D',
+  'Healthy Skin',
+  'Iron',
+  'Iron Support',
+  'Antioxidant-Rich',
+];
+
 export default function PatientForm({ onSubmit, loading }: Props) {
   const [apiKey, setApiKey] = useState('');
   const [profile, setProfile] = useState<PatientProfile>({
@@ -105,6 +113,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     eggTypes: [],
     fishTypes: [],
     nonVegDays: [],
+    dietRichness: [],
     kitchenPreferences: [],
     indianRegion: 'North Indian (Punjab, Delhi, UP)',
     pantryStaples: ['Atta (whole wheat flour)', 'Rice', 'Dal (lentils)', 'Fresh fruits (seasonal)', 'Seeds (flax, chia, sesame, pumpkin)'],
@@ -118,7 +127,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleArrayItem = (field: 'healthConditions' | 'nonVegDays' | 'kitchenPreferences' | 'pantryStaples' | 'meatTypes' | 'eggTypes' | 'fishTypes', item: string) => {
+  const toggleArrayItem = (field: 'healthConditions' | 'nonVegDays' | 'kitchenPreferences' | 'pantryStaples' | 'meatTypes' | 'eggTypes' | 'fishTypes' | 'dietRichness', item: string) => {
     setProfile((prev) => {
       const arr = prev[field] as string[];
       if (arr.includes(item)) {
@@ -473,6 +482,28 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               }`}
             >
               {condition}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Diet Richness */}
+      <section>
+        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">🌿 Diet Richness (Optional)</h3>
+        <p className="text-sm text-gray-600 mb-3">Select specific nutritional focuses for your meal plan. You can choose multiple options.</p>
+        <div className="flex flex-wrap gap-2">
+          {DIET_RICHNESS_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => toggleArrayItem('dietRichness', option)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                profile.dietRichness.includes(option)
+                  ? 'bg-emerald-100 border-emerald-400 text-emerald-800'
+                  : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {option}
             </button>
           ))}
         </div>
