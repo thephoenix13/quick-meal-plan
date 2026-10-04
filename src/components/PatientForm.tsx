@@ -59,17 +59,11 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 const MEAT_TYPES = [
   'Chicken',
-  'Mutton (Goat)',
-  'Lamb',
-  'Pork',
-  'Turkey',
-  'Duck'
+  'Mutton (Goat)'
 ];
 
 const EGG_TYPES = [
   'Chicken Eggs',
-  'Duck Eggs',
-  'Quail Eggs',
   'Country Eggs (Nattu Kozhi)'
 ];
 
