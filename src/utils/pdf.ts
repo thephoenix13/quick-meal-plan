@@ -36,19 +36,16 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
 
   // Daily Plans
   mealPlan.dailyPlan.forEach((dayPlan) => {
-    // Check if we need a new page
     if (yPos > 250) {
       doc.addPage();
       yPos = 20;
     }
 
-    // Day header
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(`Day ${dayPlan.day}`, 14, yPos);
     yPos += 8;
 
-    // Meals table
     const tableData = dayPlan.meals.map((meal) => [
       meal.mealType,
       meal.name,
@@ -104,10 +101,10 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
     ['Height:', `${profile.height} cm`],
     ['Current Weight:', `${profile.currentWeight} kg`],
     ['Goal Weight:', `${profile.goalWeight} kg`],
+    ['Goal Timeline:', profile.goalTimeline],
     ['Primary Goal:', profile.primaryGoal],
     ['Hormonal Phase:', profile.hormonalPhase],
     ['Activity Level:', profile.activityLevel],
-    ['Goal Timeline:', profile.goalTimeline],
     ['Water Target:', `${profile.waterTarget} glasses/day`],
     ['Health Conditions:', profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'],
     ['Diet Richness:', profile.dietRichness.length > 0 ? profile.dietRichness.join(', ') : 'None'],
@@ -140,6 +137,5 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
     yPos += Math.max(valueLines.length * 4, 5);
   });
 
-  // Save
   doc.save(`MealPlan_${mealPlan.patientName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
 }

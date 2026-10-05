@@ -1,6 +1,4 @@
-import { MealPlan as MealPlanType } from '../types';
-
-import { PatientProfile } from '../types';
+import { MealPlan as MealPlanType, PatientProfile } from '../types';
 
 interface Props {
   mealPlan: MealPlanType;
@@ -138,12 +136,12 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
             <p className="text-gray-600"><span className="font-semibold">Height:</span> {profile.height} cm</p>
             <p className="text-gray-600"><span className="font-semibold">Current Weight:</span> {profile.currentWeight} kg</p>
             <p className="text-gray-600"><span className="font-semibold">Goal Weight:</span> {profile.goalWeight} kg</p>
+            <p className="text-gray-600"><span className="font-semibold">Goal Timeline:</span> {profile.goalTimeline}</p>
           </div>
           <div>
             <p className="text-gray-600"><span className="font-semibold">Primary Goal:</span> {profile.primaryGoal}</p>
             <p className="text-gray-600"><span className="font-semibold">Hormonal Phase:</span> {profile.hormonalPhase}</p>
             <p className="text-gray-600"><span className="font-semibold">Activity Level:</span> {profile.activityLevel}</p>
-            <p className="text-gray-600"><span className="font-semibold">Goal Timeline:</span> {profile.goalTimeline}</p>
             <p className="text-gray-600"><span className="font-semibold">Water Target:</span> {profile.waterTarget} glasses/day</p>
           </div>
           <div className="md:col-span-2">

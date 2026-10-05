@@ -58,7 +58,6 @@ export async function generateMealPlanStreaming(
   try {
     const data = await response.json();
     
-    // Extract text from response
     const textContent = data.content?.find((block: any) => block.type === 'text');
     
     if (!textContent || !textContent.text) {
@@ -74,7 +73,6 @@ export async function generateMealPlanStreaming(
 
   callbacks.onProgress('Finalizing meal plan...');
 
-  // Parse the complete JSON response
   try {
     const mealPlan = parseMealPlanJSON(fullText, profile);
     callbacks.onComplete(mealPlan);
@@ -84,7 +82,6 @@ export async function generateMealPlanStreaming(
     console.error('Raw text preview:', fullText.substring(0, 1000));
     console.error('Raw text end:', fullText.substring(fullText.length - 500));
     
-    // Show detailed error for debugging
     const errorMsg = err.message || 'Unknown parsing error';
     callbacks.onError(
       `Failed to parse meal plan: ${errorMsg}. Please check the browser console (F12) for details.`
@@ -95,13 +92,11 @@ export async function generateMealPlanStreaming(
 function parseMealPlanJSON(rawText: string, profile: PatientProfile): MealPlan {
   let jsonString = rawText.trim();
 
-  // Strip markdown code fences if present
   const fenceMatch = jsonString.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
   if (fenceMatch) {
     jsonString = fenceMatch[1].trim();
   }
 
-  // If there's text before/after the JSON object, extract just the object
   if (!jsonString.startsWith('{')) {
     const objMatch = jsonString.match(/(\{[\s\S]*\})\s*$/);
     if (objMatch) {
@@ -109,7 +104,6 @@ function parseMealPlanJSON(rawText: string, profile: PatientProfile): MealPlan {
     }
   }
 
-  // Validate we have something to parse
   if (!jsonString || jsonString.length < 50) {
     throw new Error('Response too short or empty');
   }
@@ -118,10 +112,7 @@ function parseMealPlanJSON(rawText: string, profile: PatientProfile): MealPlan {
   try {
     parsed = JSON.parse(jsonString);
   } catch (parseErr: any) {
-    // Try to fix common JSON issues
-    // Remove trailing commas
     jsonString = jsonString.replace(/,\s*([\]}])/g, '$1');
-    // Add missing closing braces/brackets
     const openBraces = (jsonString.match(/\{/g) || []).length;
     const closeBraces = (jsonString.match(/\}/g) || []).length;
     const openBrackets = (jsonString.match(/\[/g) || []).length;
@@ -141,12 +132,10 @@ function parseMealPlanJSON(rawText: string, profile: PatientProfile): MealPlan {
     }
   }
 
-  // Validate structure
   if (!parsed.dailyPlan || !Array.isArray(parsed.dailyPlan)) {
     throw new Error('Missing dailyPlan array in response');
   }
 
-  // Be lenient - accept less than 7 days if that's what we got
   if (parsed.dailyPlan.length === 0) {
     throw new Error('No days in meal plan');
   }
@@ -166,20 +155,16 @@ function parseMealPlanJSON(rawText: string, profile: PatientProfile): MealPlan {
   return mealPlan;
 }
 
-// Calculate Ideal Body Weight (IBW) using BMI-based formula
 function calculateIBW(heightCm: number): number {
   const heightM = heightCm / 100;
-  // Using BMI of 22 as ideal
   return 22 * heightM * heightM;
 }
 
-// Calculate protein target based on adjusted body weight
 function calculateProteinTarget(profile: PatientProfile): number {
   const ibw = calculateIBW(profile.height);
   const excessWeight = Math.max(0, profile.currentWeight - ibw);
   const adjustedBW = ibw + (0.25 * excessWeight);
   
-  // Protein factor based on activity level
   let proteinFactor = 1.0;
   switch (profile.activityLevel) {
     case 'sedentary':
@@ -199,9 +184,8 @@ function calculateProteinTarget(profile: PatientProfile): number {
       break;
   }
   
-  // Adjust for goals
   if (profile.primaryGoal === 'weight loss') {
-    proteinFactor += 0.2; // Higher protein for satiety and muscle preservation
+    proteinFactor += 0.2;
   } else if (profile.primaryGoal === 'more energy' || profile.primaryGoal === 'overall wellness') {
     proteinFactor += 0.1;
   }
@@ -229,13 +213,11 @@ CRITICAL NON-VEG CONSTRAINTS:
 - On non-veg days, you can include any combination of the selected types`;
   }
 
-  // Clarify eggetarian restriction
   const eggetarianClarification = 
     profile.foodPreference === 'eggetarian'
       ? '\n- EGGETARIAN RESTRICTION: Include ONLY eggs as animal protein. NO fish, chicken, mutton, or any other meat. Eggs are allowed.'
       : '';
 
-  // Calculate protein target
   const proteinTarget = calculateProteinTarget(profile);
   const ibw = calculateIBW(profile.height);
   const excessWeight = Math.max(0, profile.currentWeight - ibw);
@@ -304,8 +286,8 @@ REQUIREMENTS:
    ${profile.dietRichness.includes('Iron Support') ? '- Iron Support: Include iron-rich foods WITH vitamin C for absorption (e.g., spinach with lemon, lentils with tomatoes, dates with orange)' : ''}
    ${profile.dietRichness.includes('Antioxidant-Rich') ? '- Antioxidant-Rich: Include berries, pomegranate, turmeric, green tea, dark leafy greens, nuts, seeds, colorful vegetables' : ''}
 7. Consider hormonal phase in meal planning (PCOS: anti-inflammatory, perimenopause: calcium-rich, etc.)
-7. Prioritize pantry staples mentioned - use them in most meals
-8. Include DIVERSE food categories each day:
+8. Prioritize pantry staples mentioned - use them in most meals
+9. Include DIVERSE food categories each day:
    - At least 1 fruit serving (papaya, apple, banana, pomegranate, guava, orange, etc.)
    - Seeds/nuts as snacks or toppings (flax, chia, sesame, almonds, walnuts)
    - Sprouts or salads where appropriate
@@ -314,8 +296,8 @@ REQUIREMENTS:
    - Whole grains (roti, rice, millets)
    - Vegetables (cooked and raw)
    - Dairy if not vegan (curd, milk, paneer)
-9. Each meal needs: mealType, name, description, portionSize, calories, protein, carbs, fat, fibre, whyItWorks, ingredients
-10. Provide a brief summary (2-3 sentences) that explicitly mentions:
+10. Each meal needs: mealType, name, description, portionSize, calories, protein, carbs, fat, fibre, whyItWorks, ingredients
+11. Provide a brief summary (2-3 sentences) that explicitly mentions:
    - How the plan addresses the primary goal
    - Key accommodations for health conditions
    - Confirmation that allergies and foods to avoid are excluded

@@ -7,27 +7,34 @@ interface Props {
 }
 
 const INDIAN_REGIONS = [
-  'North Indian (Punjab, Delhi, UP)',
-  'South Indian (Tamil Nadu, Kerala)',
-  'South Indian (Karnataka, Andhra)',
-  'East Indian (Bengal, Odisha)',
-  'West Indian (Maharashtra, Gujarat)',
-  'Rajasthani',
-  'Hyderabadi',
-  'Kashmiri',
-  'Goan',
-  'Malwani/Konkani',
-  'Chettinad',
+  'Punjabi',
+  'Delhi',
+  'Uttar Pradesh',
   'Awadhi',
   'Mughlai',
-  'Kerala Christian',
-  'Parsi',
-  'North-East Indian',
-  'Bihari',
-  'Jharkhandi',
+  'Rajasthani',
+  'Gujarati',
+  'Maharashtrian',
+  'Malwani / Konkani',
+  'Goan',
+  'Kashmiri',
   'Himachali',
   'Uttarakhandi',
+  'Bihari',
+  'Jharkhandi',
+  'Bengali',
+  'Odia',
+  'Assamese',
+  'Tamil',
+  'Chettinad',
+  'Kerala',
+  'Kerala Christian',
+  'Karnataka (Udupi)',
+  'Mangalorean',
+  'Andhra',
+  'Telangana / Hyderabadi',
   'Coorgi',
+  'Parsi',
 ];
 
 const PANTRY_STAPLES = [
@@ -115,7 +122,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     nonVegDays: [],
     dietRichness: [],
     kitchenPreferences: [],
-    indianRegion: 'North Indian (Punjab, Delhi, UP)',
+    indianRegion: 'Punjabi',
     pantryStaples: ['Atta (whole wheat flour)', 'Rice', 'Dal (lentils)', 'Fresh fruits (seasonal)', 'Seeds (flax, chia, sesame, pumpkin)'],
     allergies: '',
     foodsToAvoid: '',
@@ -133,7 +140,6 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       if (arr.includes(item)) {
         return { ...prev, [field]: arr.filter((i) => i !== item) };
       }
-      // If trying to add Jain or Vegan and food preference is non-veg or eggetarian, prevent it
       if ((item === 'Jain' || item === 'Vegan') && (prev.foodPreference === 'non-vegetarian' || prev.foodPreference === 'eggetarian')) {
         return prev;
       }
@@ -147,7 +153,6 @@ export default function PatientForm({ onSubmit, loading }: Props) {
         ? prev.nonVegCategories.filter((c) => c !== category)
         : [...prev.nonVegCategories, category];
       
-      // Clear sub-options when category is unchecked
       const updates: any = { nonVegCategories: categories };
       if (!categories.includes('Meat')) updates.meatTypes = [];
       if (!categories.includes('Eggs')) updates.eggTypes = [];
@@ -157,13 +162,11 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     });
   };
 
-  // Calculate BMI
   const calculateBMI = (weight: number, heightCm: number): number => {
     const heightM = heightCm / 100;
     return weight / (heightM * heightM);
   };
 
-  // Get timeline in months
   const getTimelineMonths = (timeline: string): number => {
     switch (timeline) {
       case '3 months': return 3;
@@ -174,12 +177,10 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     }
   };
 
-  // Validate weight loss feasibility
   const validateWeightLoss = (): { valid: boolean; message: string } => {
     const weightToLose = profile.currentWeight - profile.goalWeight;
     const months = getTimelineMonths(profile.goalTimeline);
     
-    // Check if target weight is below 30% of current weight
     if (profile.goalWeight < profile.currentWeight * 0.7) {
       return { 
         valid: false, 
@@ -187,9 +188,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       };
     }
 
-    // Check if weight loss is feasible for the timeline
-    // Safe weight loss is 0.5-1 kg per week (2-4 kg per month)
-    const maxSafeLossPerMonth = 4; // kg per month
+    const maxSafeLossPerMonth = 4;
     const requiredLossPerMonth = weightToLose / months;
     
     if (requiredLossPerMonth > maxSafeLossPerMonth) {
@@ -202,7 +201,6 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     return { valid: true, message: '' };
   };
 
-  // Check if Jain and Vegan should be disabled
   const isJainDisabled = profile.foodPreference === 'non-vegetarian' || profile.foodPreference === 'eggetarian';
   const isVeganDisabled = profile.foodPreference === 'non-vegetarian' || profile.foodPreference === 'eggetarian';
 
@@ -217,21 +215,18 @@ export default function PatientForm({ onSubmit, loading }: Props) {
       return;
     }
 
-    // Validate BMI
     const targetBMI = calculateBMI(profile.goalWeight, profile.height);
     if (targetBMI < 18) {
       alert(`Target BMI would be ${targetBMI.toFixed(1)}, which is below the healthy minimum of 18. Please increase your goal weight.`);
       return;
     }
 
-    // Validate weight loss feasibility
     const weightValidation = validateWeightLoss();
     if (!weightValidation.valid) {
       alert(weightValidation.message);
       return;
     }
 
-    // Validate non-veg selections
     if (profile.foodPreference === 'non-vegetarian') {
       if (profile.nonVegCategories.length === 0) {
         alert('Please select at least one non-vegetarian category (Meat, Eggs, or Fish)');
@@ -349,7 +344,6 @@ export default function PatientForm({ onSubmit, loading }: Props) {
               const isUnderweight = targetBMI < 18;
               const validation = validateWeightLoss();
               
-              // Calculate protein target
               const ibw = 22 * Math.pow(profile.height / 100, 2);
               const excessWeight = Math.max(0, profile.currentWeight - ibw);
               const adjustedBW = ibw + (0.25 * excessWeight);
@@ -527,7 +521,6 @@ export default function PatientForm({ onSubmit, loading }: Props) {
                   updateField('eggTypes', []);
                   updateField('fishTypes', []);
                 }
-                // Remove Jain and Vegan if switching to non-veg or eggetarian
                 if (newValue === 'non-vegetarian' || newValue === 'eggetarian') {
                   const filtered = profile.kitchenPreferences.filter(p => p !== 'Jain' && p !== 'Vegan');
                   if (filtered.length !== profile.kitchenPreferences.length) {
