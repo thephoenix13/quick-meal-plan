@@ -210,10 +210,24 @@ function calculateProteinTarget(profile: PatientProfile): number {
 }
 
 function buildPrompt(profile: PatientProfile): string {
-  const nonVegLine =
-    profile.foodPreference === 'non-vegetarian'
-      ? `\n- Non-Veg Days: ${profile.nonVegDays.join(', ')}`
-      : '';
+  let nonVegDetails = '';
+  
+  if (profile.foodPreference === 'non-vegetarian') {
+    nonVegDetails = `
+- Non-Vegetarian Categories: ${profile.nonVegCategories.join(', ')}
+${profile.meatTypes.length > 0 ? `- Meat Types: ${profile.meatTypes.join(', ')}` : ''}
+${profile.eggTypes.length > 0 ? `- Egg Types: ${profile.eggTypes.join(', ')}` : ''}
+${profile.fishTypes.length > 0 ? `- Fish Types: ${profile.fishTypes.join(', ')}` : ''}
+- Non-Veg Days: ${profile.nonVegDays.join(', ')}
+
+CRITICAL NON-VEG CONSTRAINTS:
+- ONLY include selected meat types: ${profile.meatTypes.join(', ') || 'None selected'}
+- ONLY include selected egg types: ${profile.eggTypes.join(', ') || 'None selected'}
+- ONLY include selected fish types: ${profile.fishTypes.join(', ') || 'None selected'}
+- NEVER include unselected meat/fish/egg types
+- Only include non-veg items on: ${profile.nonVegDays.join(', ')}
+- On non-veg days, you can include any combination of the selected types`;
+  }
 
   // Clarify eggetarian restriction
   const eggetarianClarification = 
@@ -242,7 +256,8 @@ PATIENT PROFILE:
 - Activity Level: ${profile.activityLevel}
 - Goal Timeline: ${profile.goalTimeline}
 - Health Conditions: ${profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'}
-- Food Preference: ${profile.foodPreference}${nonVegLine}${eggetarianClarification}
+- Diet Richness: ${profile.dietRichness.length > 0 ? profile.dietRichness.join(', ') : 'None'}
+- Food Preference: ${profile.foodPreference}${nonVegDetails}${eggetarianClarification}
 - Kitchen Preferences: ${profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'}
 - Indian Region: ${profile.indianRegion}
 - Pantry Staples: ${profile.pantryStaples.join(', ')}
@@ -282,7 +297,13 @@ REQUIREMENTS:
    - Hypertension: low sodium, high potassium
    - Iron deficiency: iron-rich foods with vitamin C
    - Vitamin D deficiency: fortified foods, fatty fish if non-veg
-6. Consider hormonal phase in meal planning (PCOS: anti-inflammatory, perimenopause: calcium-rich, etc.)
+6. DIET RICHNESS (if selected, prioritize these nutrients):
+   ${profile.dietRichness.includes('Vitamin D') ? '- Vitamin D: Include fortified milk, mushrooms, egg yolks, fatty fish (if non-veg), expose foods to sunlight when possible' : ''}
+   ${profile.dietRichness.includes('Healthy Skin') ? '- Healthy Skin: Include vitamin E (almonds, sunflower seeds), vitamin C (citrus fruits, amla), omega-3 (flaxseeds, walnuts), hydration-rich foods (cucumber, watermelon)' : ''}
+   ${profile.dietRichness.includes('Iron') ? '- Iron: Include iron-rich foods like spinach, beetroot, dates, jaggery, red amaranth, lentils, chickpeas' : ''}
+   ${profile.dietRichness.includes('Iron Support') ? '- Iron Support: Include iron-rich foods WITH vitamin C for absorption (e.g., spinach with lemon, lentils with tomatoes, dates with orange)' : ''}
+   ${profile.dietRichness.includes('Antioxidant-Rich') ? '- Antioxidant-Rich: Include berries, pomegranate, turmeric, green tea, dark leafy greens, nuts, seeds, colorful vegetables' : ''}
+7. Consider hormonal phase in meal planning (PCOS: anti-inflammatory, perimenopause: calcium-rich, etc.)
 7. Prioritize pantry staples mentioned - use them in most meals
 8. Include DIVERSE food categories each day:
    - At least 1 fruit serving (papaya, apple, banana, pomegranate, guava, orange, etc.)

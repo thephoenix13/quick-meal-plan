@@ -57,6 +57,26 @@ const PANTRY_STAPLES = [
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+const MEAT_TYPES = [
+  'Chicken',
+  'Mutton (Goat)'
+];
+
+const EGG_TYPES = [
+  'Chicken Eggs',
+  'Country Eggs (Nattu Kozhi)'
+];
+
+const FISH_TYPES = [
+  'Salmon',
+  'Tuna',
+  'Indian Fish (Rohu, Katla, Hilsa)',
+  'Prawns/Shrimp',
+  'Crab',
+  'Pomfret',
+  'Sardines'
+];
+
 const HEALTH_CONDITIONS = [
   'Hypothyroid',
   'Type 2 Diabetes',
@@ -64,6 +84,14 @@ const HEALTH_CONDITIONS = [
   'Hypertension',
   'Iron Deficiency',
   'Vitamin D Deficiency',
+];
+
+const DIET_RICHNESS_OPTIONS = [
+  'Vitamin D',
+  'Healthy Skin',
+  'Iron',
+  'Iron Support',
+  'Antioxidant-Rich',
 ];
 
 export default function PatientForm({ onSubmit, loading }: Props) {
@@ -80,7 +108,12 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     goalTimeline: '6 months',
     healthConditions: [],
     foodPreference: 'vegetarian',
+    nonVegCategories: [],
+    meatTypes: [],
+    eggTypes: [],
+    fishTypes: [],
     nonVegDays: [],
+    dietRichness: [],
     kitchenPreferences: [],
     indianRegion: 'North Indian (Punjab, Delhi, UP)',
     pantryStaples: ['Atta (whole wheat flour)', 'Rice', 'Dal (lentils)', 'Fresh fruits (seasonal)', 'Seeds (flax, chia, sesame, pumpkin)'],
@@ -94,7 +127,7 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleArrayItem = (field: 'healthConditions' | 'nonVegDays' | 'kitchenPreferences' | 'pantryStaples', item: string) => {
+  const toggleArrayItem = (field: 'healthConditions' | 'nonVegDays' | 'kitchenPreferences' | 'pantryStaples' | 'meatTypes' | 'eggTypes' | 'fishTypes' | 'dietRichness', item: string) => {
     setProfile((prev) => {
       const arr = prev[field] as string[];
       if (arr.includes(item)) {
@@ -105,6 +138,22 @@ export default function PatientForm({ onSubmit, loading }: Props) {
         return prev;
       }
       return { ...prev, [field]: [...arr, item] };
+    });
+  };
+
+  const toggleNonVegCategory = (category: string) => {
+    setProfile((prev) => {
+      const categories = prev.nonVegCategories.includes(category)
+        ? prev.nonVegCategories.filter((c) => c !== category)
+        : [...prev.nonVegCategories, category];
+      
+      // Clear sub-options when category is unchecked
+      const updates: any = { nonVegCategories: categories };
+      if (!categories.includes('Meat')) updates.meatTypes = [];
+      if (!categories.includes('Eggs')) updates.eggTypes = [];
+      if (!categories.includes('Fish')) updates.fishTypes = [];
+      
+      return { ...prev, ...updates };
     });
   };
 
@@ -180,6 +229,29 @@ export default function PatientForm({ onSubmit, loading }: Props) {
     if (!weightValidation.valid) {
       alert(weightValidation.message);
       return;
+    }
+
+    // Validate non-veg selections
+    if (profile.foodPreference === 'non-vegetarian') {
+      if (profile.nonVegCategories.length === 0) {
+        alert('Please select at least one non-vegetarian category (Meat, Eggs, or Fish)');
+        return;
+      }
+      
+      if (profile.nonVegCategories.includes('Meat') && profile.meatTypes.length === 0) {
+        alert('Please select at least one meat type');
+        return;
+      }
+      
+      if (profile.nonVegCategories.includes('Eggs') && profile.eggTypes.length === 0) {
+        alert('Please select at least one egg type');
+        return;
+      }
+      
+      if (profile.nonVegCategories.includes('Fish') && profile.fishTypes.length === 0) {
+        alert('Please select at least one fish type');
+        return;
+      }
     }
 
     onSubmit(profile, apiKey);
@@ -415,6 +487,28 @@ export default function PatientForm({ onSubmit, loading }: Props) {
         </div>
       </section>
 
+      {/* Diet Richness */}
+      <section>
+        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">🌿 Diet Richness (Optional)</h3>
+        <p className="text-sm text-gray-600 mb-3">Select specific nutritional focuses for your meal plan. You can choose multiple options.</p>
+        <div className="flex flex-wrap gap-2">
+          {DIET_RICHNESS_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => toggleArrayItem('dietRichness', option)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                profile.dietRichness.includes(option)
+                  ? 'bg-emerald-100 border-emerald-400 text-emerald-800'
+                  : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* Food Preferences */}
       <section>
         <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">🍽️ Food Preferences</h3>
@@ -428,6 +522,10 @@ export default function PatientForm({ onSubmit, loading }: Props) {
                 updateField('foodPreference', newValue);
                 if (newValue !== 'non-vegetarian') {
                   updateField('nonVegDays', []);
+                  updateField('nonVegCategories', []);
+                  updateField('meatTypes', []);
+                  updateField('eggTypes', []);
+                  updateField('fishTypes', []);
                 }
                 // Remove Jain and Vegan if switching to non-veg or eggetarian
                 if (newValue === 'non-vegetarian' || newValue === 'eggetarian') {
@@ -445,23 +543,126 @@ export default function PatientForm({ onSubmit, loading }: Props) {
             </select>
           </div>
           {profile.foodPreference === 'non-vegetarian' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Non-Veg Days</label>
-              <div className="flex flex-wrap gap-2">
-                {DAYS_OF_WEEK.map((day) => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => toggleArrayItem('nonVegDays', day)}
-                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
-                      profile.nonVegDays.includes(day)
-                        ? 'bg-green-100 border-green-400 text-green-800'
-                        : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                ))}
+            <div className="md:col-span-2 space-y-4 mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              {/* Main Categories */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Non-Vegetarian Categories <span className="text-red-500">*</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['Meat', 'Eggs', 'Fish'].map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => toggleNonVegCategory(category)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-colors ${
+                        profile.nonVegCategories.includes(category)
+                          ? 'bg-green-100 border-green-500 text-green-800'
+                          : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {profile.nonVegCategories.includes(category) ? '✓ ' : ''}{category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Meat Sub-Options */}
+              {profile.nonVegCategories.includes('Meat') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Meat Types <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {MEAT_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleArrayItem('meatTypes', type)}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                          profile.meatTypes.includes(type)
+                            ? 'bg-red-100 border-red-400 text-red-800'
+                            : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {profile.meatTypes.includes(type) ? '✓ ' : ''}{type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Egg Sub-Options */}
+              {profile.nonVegCategories.includes('Eggs') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Egg Types <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {EGG_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleArrayItem('eggTypes', type)}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                          profile.eggTypes.includes(type)
+                            ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                            : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {profile.eggTypes.includes(type) ? '✓ ' : ''}{type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fish Sub-Options */}
+              {profile.nonVegCategories.includes('Fish') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fish & Seafood Types <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {FISH_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleArrayItem('fishTypes', type)}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                          profile.fishTypes.includes(type)
+                            ? 'bg-blue-100 border-blue-400 text-blue-800'
+                            : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {profile.fishTypes.includes(type) ? '✓ ' : ''}{type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Non-Veg Days */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Non-Vegetarian Days <span className="text-red-500">*</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {DAYS_OF_WEEK.map((day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleArrayItem('nonVegDays', day)}
+                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                        profile.nonVegDays.includes(day)
+                          ? 'bg-green-100 border-green-400 text-green-800'
+                          : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {profile.nonVegDays.includes(day) ? '✓ ' : ''}{day}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}

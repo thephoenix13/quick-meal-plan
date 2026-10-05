@@ -110,10 +110,15 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
     ['Goal Timeline:', profile.goalTimeline],
     ['Water Target:', `${profile.waterTarget} glasses/day`],
     ['Health Conditions:', profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'],
+    ['Diet Richness:', profile.dietRichness.length > 0 ? profile.dietRichness.join(', ') : 'None'],
     ['Food Preference:', profile.foodPreference],
-    ...(profile.foodPreference === 'non-vegetarian' && profile.nonVegDays.length > 0
-      ? [['Non-Veg Days:', profile.nonVegDays.join(', ')]]
-      : []),
+    ...(profile.foodPreference === 'non-vegetarian' ? [
+      ...(profile.nonVegCategories.length > 0 ? [['Non-Veg Categories:', profile.nonVegCategories.join(', ')]] : []),
+      ...(profile.meatTypes.length > 0 ? [['Meat Types:', profile.meatTypes.join(', ')]] : []),
+      ...(profile.eggTypes.length > 0 ? [['Egg Types:', profile.eggTypes.join(', ')]] : []),
+      ...(profile.fishTypes.length > 0 ? [['Fish Types:', profile.fishTypes.join(', ')]] : []),
+      ...(profile.nonVegDays.length > 0 ? [['Non-Veg Days:', profile.nonVegDays.join(', ')]] : [])
+    ] : []),
     ['Kitchen Preferences:', profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'],
     ['Indian Region:', profile.indianRegion],
     ['Pantry Staples:', profile.pantryStaples.join(', ')],
