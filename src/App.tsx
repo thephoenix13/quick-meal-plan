@@ -1,11 +1,32 @@
 import { useState, useCallback } from 'react';
 import PatientForm from './components/PatientForm';
 import MealPlanDisplay from './components/MealPlanDisplay';
+import LandingPage from './components/LandingPage';
+import SinglePageOnboarding from './v2/SinglePageOnboarding';
+import { OnboardingProvider, useOnboarding } from './v2/OnboardingContext';
 import { generateMealPlanStreaming } from './utils/api';
 import { generatePDF } from './utils/pdf';
 import { PatientProfile, MealPlan } from './types';
 
+// Wrapper component to access onboarding context
+function SinglePageOnboardingWrapper({ onComplete }: { onComplete: () => void }) {
+  const { state } = useOnboarding();
+  
+  const handleComplete = () => {
+    // Map v2 profile to v1 format
+    const v2Profile = state.profileData;
+    
+    // For now, just call onComplete - the actual meal plan generation
+    // will need the API key which we'll need to handle
+    console.log('V2 Profile:', v2Profile);
+    onComplete();
+  };
+  
+  return <SinglePageOnboarding onComplete={handleComplete} />;
+}
+
 function App() {
+  const [view, setView] = useState<'landing' | 'v1' | 'v2'>('landing');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +69,63 @@ function App() {
     }
   };
 
+  const handleGoToLanding = () => {
+    setView('landing');
+    setMealPlan(null);
+    setError(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGetStarted = (version: 'v1' | 'v2' = 'v1') => {
+    setView(version);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleV2Complete = () => {
+    // TODO: Map v2 data to v1 format and generate meal plan
+    setView('v1');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Show Landing Page
+  if (view === 'landing') {
+    return (
+      <>
+        {/* Sticky Header for Landing */}
+        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-xl">🩺</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Doctor's Meal Plan Generator</h1>
+                <p className="text-xs text-gray-500">Personalized Indian Diet Plans</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleGetStarted('v1')}
+              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              Get Started
+            </button>
+          </div>
+        </header>
+        <LandingPage onGetStarted={handleGetStarted} />
+      </>
+    );
+  }
+
+  // Show v2 Single Page Onboarding
+  if (view === 'v2') {
+    return (
+      <OnboardingProvider>
+        <SinglePageOnboardingWrapper onComplete={handleV2Complete} />
+      </OnboardingProvider>
+    );
+  }
+
+  // Show Generator View
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -62,14 +140,22 @@ function App() {
               <p className="text-xs text-gray-500">Personalized Indian Diet Plans</p>
             </div>
           </div>
-          {mealPlan && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => { setMealPlan(null); setError(null); }}
+              onClick={handleGoToLanding}
               className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              ← New Plan
+              🏠 Home
             </button>
-          )}
+            {mealPlan && (
+              <button
+                onClick={() => { setMealPlan(null); setError(null); }}
+                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ← New Plan
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
