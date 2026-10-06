@@ -2,12 +2,13 @@ import { useState, useCallback } from 'react';
 import PatientForm from './components/PatientForm';
 import MealPlanDisplay from './components/MealPlanDisplay';
 import LandingPage from './components/LandingPage';
+import OnboardingWizard from './v2/OnboardingWizard';
 import { generateMealPlanStreaming } from './utils/api';
 import { generatePDF } from './utils/pdf';
 import { PatientProfile, MealPlan } from './types';
 
 function App() {
-  const [view, setView] = useState<'landing' | 'generator'>('landing');
+  const [view, setView] = useState<'landing' | 'v1' | 'v2'>('landing');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +58,14 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleGetStarted = () => {
-    setView('generator');
+  const handleGetStarted = (version: 'v1' | 'v2' = 'v1') => {
+    setView(version);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleV2Complete = () => {
+    // TODO: Map v2 data to v1 format and generate meal plan
+    setView('v1');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -79,7 +86,7 @@ function App() {
               </div>
             </div>
             <button
-              onClick={handleGetStarted}
+              onClick={() => handleGetStarted('v1')}
               className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               Get Started
@@ -89,6 +96,11 @@ function App() {
         <LandingPage onGetStarted={handleGetStarted} />
       </>
     );
+  }
+
+  // Show v2 Onboarding Wizard
+  if (view === 'v2') {
+    return <OnboardingWizard onComplete={handleV2Complete} />;
   }
 
   // Show Generator View

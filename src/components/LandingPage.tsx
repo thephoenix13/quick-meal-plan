@@ -1,5 +1,5 @@
 interface LandingPageProps {
-  onGetStarted: () => void;
+  onGetStarted: (version: 'v1' | 'v2') => void;
 }
 
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
@@ -18,7 +18,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </p>
           
           <button
-            onClick={onGetStarted}
+            onClick={() => onGetStarted('v1')}
             className="px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
           >
             Get started
@@ -209,6 +209,46 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
+      {/* Choose Your Experience Section */}
+      <section className="py-20 md:py-28 border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-2xl md:text-3xl font-semibold text-center mb-4 text-gray-900 tracking-tight">
+            Choose your experience
+          </h2>
+          <p className="text-center text-gray-600 mb-16 text-base">
+            Two ways to create your meal plan
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="border border-gray-200 rounded-lg p-8 hover:border-gray-300 transition-colors">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Quick form</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Fill out a single form with all your details and generate your meal plan immediately.
+              </p>
+              <button
+                onClick={() => onGetStarted('v1')}
+                className="w-full px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
+              >
+                Start quick form
+              </button>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg p-8 hover:border-gray-300 transition-colors">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Guided onboarding</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Step-by-step wizard with 21 questions for a more personalized experience.
+              </p>
+              <button
+                onClick={() => onGetStarted('v2')}
+                className="w-full px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
+              >
+                Start guided onboarding
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA Section */}
       <section className="py-20 md:py-28">
         <div className="max-w-3xl mx-auto px-6 text-center">
@@ -219,12 +259,20 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             Start generating personalized meal plans for your patients today.
           </p>
           
-          <button
-            onClick={onGetStarted}
-            className="px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
-          >
-            Get started
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => onGetStarted('v1')}
+              className="px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
+            >
+              Quick form
+            </button>
+            <button
+              onClick={() => onGetStarted('v2')}
+              className="px-6 py-3 bg-white text-gray-900 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Guided onboarding
+            </button>
+          </div>
           
           <p className="mt-4 text-sm text-gray-500">
             Free to use • No sign-up required • Just need your Anthropic API key
