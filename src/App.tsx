@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react';
 import PatientForm from './components/PatientForm';
 import MealPlanDisplay from './components/MealPlanDisplay';
+import LandingPage from './components/LandingPage';
 import { generateMealPlanStreaming } from './utils/api';
 import { generatePDF } from './utils/pdf';
 import { PatientProfile, MealPlan } from './types';
 
 function App() {
+  const [view, setView] = useState<'landing' | 'generator'>('landing');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,48 @@ function App() {
     }
   };
 
+  const handleGoToLanding = () => {
+    setView('landing');
+    setMealPlan(null);
+    setError(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGetStarted = () => {
+    setView('generator');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Show Landing Page
+  if (view === 'landing') {
+    return (
+      <>
+        {/* Sticky Header for Landing */}
+        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-xl">🩺</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Doctor's Meal Plan Generator</h1>
+                <p className="text-xs text-gray-500">Personalized Indian Diet Plans</p>
+              </div>
+            </div>
+            <button
+              onClick={handleGetStarted}
+              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              Get Started
+            </button>
+          </div>
+        </header>
+        <LandingPage onGetStarted={handleGetStarted} />
+      </>
+    );
+  }
+
+  // Show Generator View
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -62,14 +106,22 @@ function App() {
               <p className="text-xs text-gray-500">Personalized Indian Diet Plans</p>
             </div>
           </div>
-          {mealPlan && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => { setMealPlan(null); setError(null); }}
+              onClick={handleGoToLanding}
               className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              ← New Plan
+              🏠 Home
             </button>
-          )}
+            {mealPlan && (
+              <button
+                onClick={() => { setMealPlan(null); setError(null); }}
+                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ← New Plan
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
