@@ -2,10 +2,28 @@ import { useState, useCallback } from 'react';
 import PatientForm from './components/PatientForm';
 import MealPlanDisplay from './components/MealPlanDisplay';
 import LandingPage from './components/LandingPage';
-import OnboardingWizard from './v2/OnboardingWizard';
+import SinglePageOnboarding from './v2/SinglePageOnboarding';
+import { OnboardingProvider, useOnboarding } from './v2/OnboardingContext';
 import { generateMealPlanStreaming } from './utils/api';
 import { generatePDF } from './utils/pdf';
 import { PatientProfile, MealPlan } from './types';
+
+// Wrapper component to access onboarding context
+function SinglePageOnboardingWrapper({ onComplete }: { onComplete: () => void }) {
+  const { state } = useOnboarding();
+  
+  const handleComplete = () => {
+    // Map v2 profile to v1 format
+    const v2Profile = state.profileData;
+    
+    // For now, just call onComplete - the actual meal plan generation
+    // will need the API key which we'll need to handle
+    console.log('V2 Profile:', v2Profile);
+    onComplete();
+  };
+  
+  return <SinglePageOnboarding onComplete={handleComplete} />;
+}
 
 function App() {
   const [view, setView] = useState<'landing' | 'v1' | 'v2'>('landing');
@@ -98,9 +116,13 @@ function App() {
     );
   }
 
-  // Show v2 Onboarding Wizard
+  // Show v2 Single Page Onboarding
   if (view === 'v2') {
-    return <OnboardingWizard onComplete={handleV2Complete} />;
+    return (
+      <OnboardingProvider>
+        <SinglePageOnboardingWrapper onComplete={handleV2Complete} />
+      </OnboardingProvider>
+    );
   }
 
   // Show Generator View
