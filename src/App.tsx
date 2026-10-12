@@ -3,26 +3,17 @@ import PatientForm from './components/PatientForm';
 import MealPlanDisplay from './components/MealPlanDisplay';
 import LandingPage from './components/LandingPage';
 import SinglePageOnboarding from './v2/SinglePageOnboarding';
-import { OnboardingProvider, useOnboarding } from './v2/OnboardingContext';
+import { OnboardingProvider } from './v2/OnboardingContext';
 import { generateMealPlanStreaming } from './utils/api';
 import { generatePDF } from './utils/pdf';
 import { PatientProfile, MealPlan } from './types';
 
-// Wrapper component to access onboarding context
-function SinglePageOnboardingWrapper({ onComplete }: { onComplete: () => void }) {
-  const { state } = useOnboarding();
-  
-  const handleComplete = () => {
-    // Map v2 profile to v1 format
-    const v2Profile = state.profileData;
-    
-    // For now, just call onComplete - the actual meal plan generation
-    // will need the API key which we'll need to handle
-    console.log('V2 Profile:', v2Profile);
-    onComplete();
-  };
-  
-  return <SinglePageOnboarding onComplete={handleComplete} />;
+function SinglePageOnboardingWrapper({
+  onComplete,
+}: {
+  onComplete: (profile: PatientProfile, apiKey: string) => void;
+}) {
+  return <SinglePageOnboarding onComplete={onComplete} />;
 }
 
 function App() {
@@ -33,6 +24,7 @@ function App() {
   const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
   const [lastProfile, setLastProfile] = useState<PatientProfile | null>(null);
   const [lastApiKey, setLastApiKey] = useState('');
+  const [submittedFromGuided, setSubmittedFromGuided] = useState(false);
 
   const handleSubmit = useCallback(async (profile: PatientProfile, apiKey: string) => {
     setLoading(true);
@@ -73,7 +65,19 @@ function App() {
     setView('landing');
     setMealPlan(null);
     setError(null);
+    setLastProfile(null);
+    setLastApiKey('');
+    setSubmittedFromGuided(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNewPlan = () => {
+    setMealPlan(null);
+    setError(null);
+    setLastProfile(null);
+    setLastApiKey('');
+    setView(submittedFromGuided ? 'v2' : 'v1');
+    setSubmittedFromGuided(false);
   };
 
   const handleGetStarted = (version: 'v1' | 'v2' = 'v1') => {
@@ -81,43 +85,22 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleV2Complete = () => {
-    // TODO: Map v2 data to v1 format and generate meal plan
+  const handleV2Complete = (profile: PatientProfile, apiKey: string) => {
+    setSubmittedFromGuided(true);
     setView('v1');
+    void handleSubmit(profile, apiKey);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Show Landing Page
   if (view === 'landing') {
     return (
-      <>
-        {/* Sticky Header for Landing */}
-        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-xl">🩺</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Doctor's Meal Plan Generator</h1>
-                <p className="text-xs text-gray-500">Personalized Indian Diet Plans</p>
-              </div>
-            </div>
-            <button
-              onClick={() => handleGetStarted('v1')}
-              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              Get Started
-            </button>
-          </div>
-        </header>
-        <LandingPage onGetStarted={handleGetStarted} />
-      </>
+      <LandingPage onGetStarted={handleGetStarted} />
     );
   }
 
   // Show v2 Single Page Onboarding
-  if (view === 'v2') {
+  if (view === 'v2' && !mealPlan && !loading && !error) {
     return (
       <OnboardingProvider>
         <SinglePageOnboardingWrapper onComplete={handleV2Complete} />
@@ -149,7 +132,7 @@ function App() {
             </button>
             {mealPlan && (
               <button
-                onClick={() => { setMealPlan(null); setError(null); }}
+                onClick={handleNewPlan}
                 className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 ← New Plan
@@ -161,7 +144,7 @@ function App() {
 
       {/* Main Content */}
       <main className="py-8">
-        {!mealPlan && !loading && (
+        {!mealPlan && !loading && !lastProfile && (
           <>
             {/* Hero Section */}
             <div className="max-w-4xl mx-auto px-6 mb-8 text-center">
@@ -173,7 +156,13 @@ function App() {
                 dietary preferences, health conditions, and regional cuisine.
               </p>
             </div>
-            <PatientForm onSubmit={handleSubmit} loading={loading} />
+            <PatientForm
+              onSubmit={(profile, apiKey) => {
+                setSubmittedFromGuided(false);
+                void handleSubmit(profile, apiKey);
+              }}
+              loading={loading}
+            />
           </>
         )}
 
@@ -194,10 +183,13 @@ function App() {
               <h3 className="text-lg font-semibold text-red-800 mb-2">⚠️ Error</h3>
               <p className="text-sm text-red-700">{error}</p>
               <button
-                onClick={() => { setError(null); }}
+                onClick={() => {
+                  if (lastProfile && lastApiKey) handleRegenerate();
+                  else setError(null);
+                }}
                 className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm"
               >
-                Try Again
+                {lastProfile ? 'Retry with this profile' : 'Try Again'}
               </button>
             </div>
           </div>

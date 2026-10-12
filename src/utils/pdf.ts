@@ -22,6 +22,15 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
   doc.text(`Daily Calorie Target: ${mealPlan.dailyCalorieTarget} kcal`, pageWidth / 2, yPos, { align: 'center' });
   yPos += 12;
 
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  const safetyNotice = doc.splitTextToSize(
+    'Synthetic-data testing only. This AI-generated plan is not medical advice. Review ingredients and allergy risks with a qualified professional; allergen exclusion is not guaranteed.',
+    pageWidth - 28
+  );
+  doc.text(safetyNotice, 14, yPos);
+  yPos += safetyNotice.length * 4 + 6;
+
   // Summary
   if (mealPlan.summary) {
     doc.setFontSize(11);
@@ -97,16 +106,19 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
 
   const profileData = [
     ['Patient Name:', profile.name],
+    ['Language:', profile.secondaryLanguage || 'English'],
     ['Age:', `${profile.age} years`],
     ['Height:', `${profile.height} cm`],
     ['Current Weight:', `${profile.currentWeight} kg`],
-    ['Goal Weight:', `${profile.goalWeight} kg`],
+    ...(profile.primaryGoal === 'weight loss' ? [['Goal Weight:', `${profile.goalWeight} kg`]] : []),
     ['Goal Timeline:', profile.goalTimeline],
+    ...(profile.motivations?.length ? [['Motivations:', profile.motivations.join(', ')]] : []),
     ['Primary Goal:', profile.primaryGoal],
     ['Hormonal Phase:', profile.hormonalPhase],
     ['Activity Level:', profile.activityLevel],
     ['Water Target:', `${profile.waterTarget} glasses/day`],
     ['Health Conditions:', profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'],
+    ['Selected Allergies:', profile.selectedAllergies?.length ? profile.selectedAllergies.join(', ') : profile.allergies || 'None'],
     ['Diet Richness:', profile.dietRichness.length > 0 ? profile.dietRichness.join(', ') : 'None'],
     ['Food Preference:', profile.foodPreference],
     ...(profile.foodPreference === 'non-vegetarian' ? [
@@ -118,10 +130,23 @@ export function generatePDF(mealPlan: MealPlan, profile: PatientProfile) {
     ] : []),
     ['Kitchen Preferences:', profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'],
     ['Indian Region:', profile.indianRegion],
-    ['Pantry Staples:', profile.pantryStaples.join(', ')],
+    ['Compatible pantry staples to prioritize:', profile.pantryStaples.join(', ') || 'None'],
+    ...(profile.excludedPantryStaples?.length ? [['Selected pantry items excluded from generation:', profile.excludedPantryStaples.join(', ')]] : []),
     ['Allergies:', profile.allergies || 'None'],
     ['Foods to Avoid:', profile.foodsToAvoid || 'None'],
     ['Meals Per Day:', profile.mealsPerDay.toString()],
+    ['City / State:', [profile.city, profile.state].filter(Boolean).join(', ') || 'Not specified'],
+    ['Food Frequency:', Object.entries(profile.foodFrequency ?? {}).map(([food, frequency]) => `${food}: ${frequency}`).join('; ') || 'Not specified'],
+    ['Routine Habits:', profile.routineHabits?.map(habit => `${habit.name} ${habit.timesPerDay}x/day${habit.preference ? ` (${habit.preference})` : ''}`).join('; ') || 'Not specified'],
+    ['Household Portions:', [
+      profile.householdPortions?.chapatiSize && `Chapati ${profile.householdPortions.chapatiSize}`,
+      profile.householdPortions?.riceBowlMl && `Rice bowl ${profile.householdPortions.riceBowlMl} ml`,
+      profile.householdPortions?.dalBowlMl && `Dal bowl ${profile.householdPortions.dalBowlMl} ml`,
+    ].filter(Boolean).join('; ') || 'Not specified'],
+    ...(profile.estimatedTargets ? [[
+      'WomenFit target preview:',
+      `${profile.estimatedTargets.calories} kcal, ${profile.estimatedTargets.protein}g protein, ${profile.estimatedTargets.carbs}g carbs, ${profile.estimatedTargets.fat}g fat, ${profile.estimatedTargets.fibre}g fibre, ${profile.estimatedTargets.waterGlasses} glasses water`,
+    ]] : []),
   ];
 
   profileData.forEach(([label, value]) => {

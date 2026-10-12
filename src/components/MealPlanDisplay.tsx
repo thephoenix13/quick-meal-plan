@@ -17,13 +17,19 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
           <span>👤 {mealPlan.patientName}</span>
           <span>📅 {mealPlan.generatedDate}</span>
           <span>🔥 {mealPlan.dailyCalorieTarget} kcal/day</span>
-          <span>⚖️ {profile.currentWeight}kg → {profile.goalWeight}kg in {profile.goalTimeline}</span>
+          {profile.primaryGoal === 'weight_loss' && profile.goalWeight > 0 && (
+            <span>⚖️ {profile.currentWeight}kg → {profile.goalWeight}kg in {profile.goalTimeline}</span>
+          )}
           <span>🍽️ {profile.mealsPerDay} meals/day</span>
         </div>
         {mealPlan.summary && (
           <p className="mt-3 text-sm bg-white/10 rounded-lg p-3">{mealPlan.summary}</p>
         )}
       </div>
+
+      <p className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        Synthetic-data testing only. This AI-generated plan is not medical advice. Review all ingredients and allergy risks with a qualified professional; the generator cannot guarantee allergen exclusion.
+      </p>
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-3 mb-8">
@@ -132,11 +138,15 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-gray-600"><span className="font-semibold">Patient Name:</span> {profile.name}</p>
+            <p className="text-gray-600"><span className="font-semibold">Language:</span> {profile.secondaryLanguage || 'English'}</p>
             <p className="text-gray-600"><span className="font-semibold">Age:</span> {profile.age} years</p>
             <p className="text-gray-600"><span className="font-semibold">Height:</span> {profile.height} cm</p>
             <p className="text-gray-600"><span className="font-semibold">Current Weight:</span> {profile.currentWeight} kg</p>
-            <p className="text-gray-600"><span className="font-semibold">Goal Weight:</span> {profile.goalWeight} kg</p>
+            {profile.primaryGoal === 'weight loss' ? (
+              <p className="text-gray-600"><span className="font-semibold">Goal Weight:</span> {profile.goalWeight} kg</p>
+            ) : null}
             <p className="text-gray-600"><span className="font-semibold">Goal Timeline:</span> {profile.goalTimeline}</p>
+            {profile.motivations?.length ? <p className="text-gray-600"><span className="font-semibold">Motivations:</span> {profile.motivations.join(', ')}</p> : null}
           </div>
           <div>
             <p className="text-gray-600"><span className="font-semibold">Primary Goal:</span> {profile.primaryGoal}</p>
@@ -146,6 +156,7 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
           </div>
           <div className="md:col-span-2">
             <p className="text-gray-600"><span className="font-semibold">Health Conditions:</span> {profile.healthConditions.length > 0 ? profile.healthConditions.join(', ') : 'None'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Selected Allergies:</span> {profile.selectedAllergies?.length ? profile.selectedAllergies.join(', ') : profile.allergies || 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Diet Richness:</span> {profile.dietRichness.length > 0 ? profile.dietRichness.join(', ') : 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Food Preference:</span> {profile.foodPreference}</p>
             {profile.foodPreference === 'non-vegetarian' && (
@@ -169,10 +180,27 @@ export default function MealPlanDisplay({ mealPlan, profile, onDownloadPDF, onRe
             )}
             <p className="text-gray-600"><span className="font-semibold">Kitchen Preferences:</span> {profile.kitchenPreferences.length > 0 ? profile.kitchenPreferences.join(', ') : 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Indian Region:</span> {profile.indianRegion}</p>
-            <p className="text-gray-600"><span className="font-semibold">Pantry Staples:</span> {profile.pantryStaples.join(', ')}</p>
+            <p className="text-gray-600"><span className="font-semibold">Compatible pantry staples to prioritize:</span> {profile.pantryStaples.join(', ') || 'None'}</p>
+            {profile.excludedPantryStaples?.length ? (
+              <p className="text-gray-600"><span className="font-semibold">Selected pantry items excluded from generation:</span> {profile.excludedPantryStaples.join(', ')}</p>
+            ) : null}
             <p className="text-gray-600"><span className="font-semibold">Allergies:</span> {profile.allergies || 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Foods to Avoid:</span> {profile.foodsToAvoid || 'None'}</p>
             <p className="text-gray-600"><span className="font-semibold">Meals Per Day:</span> {profile.mealsPerDay}</p>
+            <p className="text-gray-600"><span className="font-semibold">City / State:</span> {[profile.city, profile.state].filter(Boolean).join(', ') || 'Not specified'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Food Frequency:</span> {Object.entries(profile.foodFrequency ?? {}).map(([food, frequency]) => `${food}: ${frequency}`).join('; ') || 'Not specified'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Routine Habits:</span> {profile.routineHabits?.map(habit => `${habit.name} ${habit.timesPerDay}×/day${habit.preference ? ` (${habit.preference})` : ''}`).join('; ') || 'Not specified'}</p>
+            <p className="text-gray-600"><span className="font-semibold">Household Portions:</span> {[
+              profile.householdPortions?.chapatiSize && `Chapati ${profile.householdPortions.chapatiSize}`,
+              profile.householdPortions?.riceBowlMl && `Rice bowl ${profile.householdPortions.riceBowlMl} ml`,
+              profile.householdPortions?.dalBowlMl && `Dal bowl ${profile.householdPortions.dalBowlMl} ml`,
+            ].filter(Boolean).join('; ') || 'Not specified'}</p>
+            {profile.estimatedTargets && (
+              <p className="text-gray-600 md:col-span-2">
+                <span className="font-semibold">WomenFit target preview (comparison estimate):</span>{' '}
+                {profile.estimatedTargets.calories} kcal · {profile.estimatedTargets.protein}g protein · {profile.estimatedTargets.carbs}g carbs · {profile.estimatedTargets.fat}g fat · {profile.estimatedTargets.fibre}g fibre · {profile.estimatedTargets.waterGlasses} glasses water
+              </p>
+            )}
           </div>
         </div>
       </div>

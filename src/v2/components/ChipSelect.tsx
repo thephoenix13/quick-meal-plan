@@ -24,6 +24,7 @@ export default function ChipSelect({ options, selected, onChange }: ChipSelectPr
             key={option}
             type="button"
             onClick={() => toggleOption(option)}
+            aria-pressed={isSelected}
             className={`px-4 py-2 text-sm rounded-md border transition-colors ${
               isSelected
                 ? 'bg-gray-900 text-white border-gray-900'

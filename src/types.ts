@@ -9,6 +9,30 @@ export interface PatientProfile {
   activityLevel: string;
   goalTimeline: string;
   healthConditions: string[];
+  selectedAllergies?: string[];
+  secondaryLanguage?: string;
+  motivations?: string[];
+  city?: string;
+  state?: string;
+  foodFrequency?: Record<string, string>;
+  routineHabits?: Array<{
+    name: string;
+    timesPerDay: number;
+    preference?: string;
+  }>;
+  householdPortions?: {
+    chapatiSize?: string;
+    riceBowlMl?: number;
+    dalBowlMl?: number;
+  };
+  estimatedTargets?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fibre: number;
+    waterGlasses: number;
+  };
   foodPreference: string;
   nonVegCategories: string[];
   meatTypes: string[];
@@ -19,6 +43,7 @@ export interface PatientProfile {
   kitchenPreferences: string[];
   indianRegion: string;
   pantryStaples: string[];
+  excludedPantryStaples?: string[];
   allergies: string;
   foodsToAvoid: string;
   mealsPerDay: number;

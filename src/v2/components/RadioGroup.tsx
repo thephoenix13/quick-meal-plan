@@ -11,11 +11,13 @@ interface RadioGroupProps {
   value: string;
   onChange: (value: string) => void;
   name: string;
+  ariaDescribedBy?: string;
+  ariaLabel?: string;
 }
 
-export default function RadioGroup({ options, value, onChange, name }: RadioGroupProps) {
+export default function RadioGroup({ options, value, onChange, name, ariaDescribedBy, ariaLabel }: RadioGroupProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="radiogroup" aria-label={ariaLabel || name} aria-describedby={ariaDescribedBy}>
       {options.map((option) => (
         <label
           key={option.value}

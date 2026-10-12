@@ -10,6 +10,7 @@ export interface PatientProfileV2 {
   
   // Goals
   primaryGoal: string;
+  motivations?: string[];
   hormonalPhase: string;
   goalTimeline?: string;
   goalWeight?: number;
